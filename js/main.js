@@ -142,8 +142,8 @@
     $('hint').innerHTML = mode === 'demo'
       ? 'Demo: the car drives itself · <b>C</b> change view · <b>Tab</b> menu'
       : (P.settings.auto
-        ? 'Start: <b>1</b> Drive (<b>R</b> reverse) · <b>Space</b> handbrake off · <b>W</b>/<b>S</b> gas/brake · <b>A</b>/<b>D</b> steer · click to look around · <b>H</b> help'
-        : 'Start: <b>Q</b> clutch down · <b>1</b> gear · <b>B</b> + scroll up to bite · <b>Space</b> handbrake off · click to look around · <b>H</b> help');
+        ? 'Start: <b>1</b> Drive (<b>R</b> reverse) · <b>Space</b> handbrake off · <b>W</b>/<b>S</b> gas/brake · <b>A</b>/<b>D</b> steer · drag the mouse to look around · <b>H</b> help'
+        : 'Start: <b>Q</b> clutch down · <b>1</b> gear · <b>B</b> + scroll up to bite · <b>Space</b> handbrake off · drag the mouse to look around · <b>H</b> help');
     toast(mode === 'demo' ? 'Watch: the camera looks where you should look' : (P.settings.auto ? 'Press 1 for Drive, then Space to release the handbrake' : 'Clutch down (Q), 1st gear (1), find the bite, release the handbrake (Space)'), 4);
   }
 
@@ -281,11 +281,24 @@
   canvas.addEventListener('click', () => { S.init(); if (G.running && document.pointerLockElement !== canvas) canvas.requestPointerLock(); });
   // hold the right mouse button to zoom in (e.g. on a mirror)
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-  canvas.addEventListener('mousedown', (e) => { if (e.button === 2) G.zoomHold = true; });
-  window.addEventListener('mouseup', (e) => { if (e.button === 2) G.zoomHold = false; });
+  // drag with the left button to look around (works even where pointer lock is blocked)
+  canvas.addEventListener('mousedown', (e) => {
+    if (e.button === 2) G.zoomHold = true;
+    if (e.button === 0) { G.dragging = true; G.lastMouse = { x: e.clientX, y: e.clientY }; }
+  });
+  window.addEventListener('mouseup', (e) => { if (e.button === 2) G.zoomHold = false; if (e.button === 0) G.dragging = false; });
+  document.addEventListener('pointerlockerror', () => { toast('Drag with the mouse to look around', 2); });
   document.addEventListener('mousemove', (e) => {
-    if (document.pointerLockElement !== canvas) return;
-    const k = 0.0024 * (G.view === 'driver' ? driverCam.fov / 72 : 1);  // slower look when zoomed in
+    const locked = document.pointerLockElement === canvas;
+    if (!locked && !G.dragging) return;
+    // movementX/Y can be missing or zero in some embedded browsers, so fall back to position deltas
+    let mx = e.movementX, my = e.movementY;
+    if (!locked) {
+      mx = e.clientX - G.lastMouse.x; my = e.clientY - G.lastMouse.y;
+      G.lastMouse = { x: e.clientX, y: e.clientY };
+    }
+    e = { movementX: mx, movementY: my };
+    const k = 0.0024 * (G.view === 'driver' ? driverCam.fov / 72 : 1) * (locked ? 1 : 1.6);  // slower look when zoomed in
     if (G.view === 'driver') {
       if (coach.mode === 'demo') return;
       G.yaw = P.clamp(G.yaw - e.movementX * k, -3.0, 3.0);
