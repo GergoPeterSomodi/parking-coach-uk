@@ -139,7 +139,12 @@
     $('hud').classList.remove('hidden');
     G.running = true;
     aimMirrors();
-    toast(mode === 'demo' ? 'Watch: the camera looks where you should look' : (mode === 'test' ? 'Test mode: no prompts. Finish with handbrake + neutral.' : 'Click the view to look around with the mouse'), 3);
+    $('hint').innerHTML = mode === 'demo'
+      ? 'Demo: the car drives itself · <b>C</b> change view · <b>Tab</b> menu'
+      : (P.settings.auto
+        ? 'Start: <b>1</b> Drive (<b>R</b> reverse) · <b>Space</b> handbrake off · <b>W</b>/<b>S</b> gas/brake · <b>A</b>/<b>D</b> steer · click to look around · <b>H</b> help'
+        : 'Start: <b>Q</b> clutch down · <b>1</b> gear · <b>B</b> + scroll up to bite · <b>Space</b> handbrake off · click to look around · <b>H</b> help');
+    toast(mode === 'demo' ? 'Watch: the camera looks where you should look' : (P.settings.auto ? 'Press 1 for Drive, then Space to release the handbrake' : 'Clutch down (Q), 1st gear (1), find the bite, release the handbrake (Space)'), 4);
   }
 
   function clearGroup(g) { while (g.children.length) { const c = g.children.pop(); c.traverse(o => o.geometry && o.geometry.dispose()); } }
@@ -214,6 +219,18 @@
     if (keyMap[e.code]) { G.keys[keyMap[e.code]] = true; e.preventDefault(); }
     if (e.repeat) return;
     const demo = coach.mode === 'demo';
+    // explain why the car isn't moving
+    if (keyMap[e.code]) {
+      const kind = keyMap[e.code];
+      if (demo) toast('Demo: the car drives itself. Press Tab and choose Guided or Test to drive.', 3);
+      else if (kind === 'gas' || kind === 'brake') {
+        const why = [];
+        if (!veh.engineOn && !P.settings.auto) why.push('start the engine (I)');
+        if (veh.gear === 'N') why.push(P.settings.auto ? 'select Drive (1) or Reverse (R)' : 'select a gear: clutch down (Q), then 1 or R');
+        if (veh.handbrake) why.push('release the handbrake (Space)');
+        if (why.length && kind === 'gas') toast('To move: ' + why.join(', then '), 3);
+      }
+    }
     switch (e.code) {
       case 'KeyC': G.view = VIEWS[(VIEWS.indexOf(G.view) + 1) % VIEWS.length]; toast(VIEW_NAMES[G.view], 1); break;
       case 'KeyZ': G.yaw = 0; G.pitch = -0.08; G.chaseYaw = 0; break;
@@ -280,7 +297,6 @@
       G.chasePitch = P.clamp(G.chasePitch + e.movementY * k, 0.05, 1.4);
     }
   });
-  document.addEventListener('pointerlockchange', () => { $('hint').classList.toggle('hidden', document.pointerLockElement === canvas); });
 
   // ---------------------------------------------------------------- simulation step
   let prevMoving = false;
