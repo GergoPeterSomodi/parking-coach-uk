@@ -29,8 +29,9 @@
     emit(type, msg) { this.events.push({ type, msg }); }
 
     setGear(g) {
+      if (P.settings.auto && g === '2') g = '1';
       if (g === this.gear) return true;
-      if (g !== 'N' && this.engineOn && this.clutch < 0.85) {
+      if (!P.settings.auto && g !== 'N' && this.engineOn && this.clutch < 0.85) {
         this.emit('grind', 'Press the clutch fully down before changing gear (Q or scroll down)');
         return false;
       }
@@ -65,6 +66,8 @@
       }
       this.steer = P.clamp(this.steer, -s.maxSteer, s.maxSteer);
 
+      if (P.settings.auto) return this.updateAutomatic(dt);
+
       const N = 4, h = dt / N, m = s.mass, K = 6000;
       for (let i = 0; i < N; i++) {
         const e = this.engagement;
@@ -94,6 +97,23 @@
         }
         this.integrate(h);
       }
+    }
+
+    // Automatic gearbox: the car creeps slowly in Drive/Reverse, gas speeds up, brake stops. No stalling.
+    updateAutomatic(dt) {
+      this.engineOn = true;
+      const dirG = this.gear === 'N' ? 0 : this.dir;
+      const creep = 0.6, max = this.gear === 'R' ? 2.5 : 7;
+      const target = dirG && !this.handbrake ? dirG * (creep + this.throttle * (max - creep)) : 0;
+      if (this.brake > 0.05) this.v = P.approach(this.v, 0, (6 * this.brake + 0.5) * dt);
+      else if (this.handbrake || !dirG) this.v = P.approach(this.v, 0, (this.handbrake ? 6 : 0.6) * dt);
+      else {
+        const speedingUp = Math.abs(target) > Math.abs(this.v) && (this.v === 0 || Math.sign(target) === Math.sign(this.v));
+        this.v = P.approach(this.v, target, (speedingUp ? 0.7 + this.throttle * 1.8 : 1.5) * dt);
+      }
+      this.rpm = 750 + Math.abs(this.v) * 160 + this.throttle * 1200;
+      const N = 4;
+      for (let i = 0; i < N; i++) this.integrate(dt / N);
     }
 
     // Demo autopilot: drives kinematically towards commanded speed/steer

@@ -76,13 +76,16 @@
 
   // ---------------------------------------------------------------- generic steps
   function moveOff(gear = '1') {
-    const gname = gear === 'R' ? 'reverse (R)' : gear === '1' ? '1st gear (1)' : '2nd gear (2)';
+    const A = P.settings.auto;
+    const gname = gear === 'R' ? 'reverse (R)' : A ? 'Drive (1)' : gear === '1' ? '1st gear (1)' : '2nd gear (2)';
     return {
       title: 'Move off (POM: prepare, observe, move)',
-      text: `Clutch fully down (Q), select ${gname}. Look all round: left blind spot, mirrors, right blind spot. Bring the clutch up to the biting point (B, then scroll up gently until the revs dip), release the handbrake (Space) and creep forward.`,
+      text: A
+        ? `Select ${gname}. Look all round: left blind spot, mirrors, right blind spot. Release the handbrake (Space) and let the car creep forward. Tap the brake (S) to keep it slow.`
+        : `Clutch fully down (Q), select ${gname}. Look all round: left blind spot, mirrors, right blind spot. Bring the clutch up to the biting point (B, then scroll up gently until the revs dip), release the handbrake (Space) and creep forward.`,
       look: 'allRound',
       checklist: st => [
-        { label: `Clutch down & ${gname}`, ok: st.gear === gear },
+        { label: A ? `Select ${gname}` : `Clutch down & ${gname}`, ok: st.gear === gear },
         { label: 'All-round observation', ok: st.obs.allRound() },
         { label: 'Handbrake off (Space)', ok: !st.hb },
         { label: 'Creeping forward', ok: st.v > 0.15 },
@@ -98,7 +101,7 @@
   function prepReverse(extra = '') {
     return {
       title: 'Prepare to reverse',
-      text: 'Stop. Clutch fully down (Q), select reverse (R). Do full all-round observation: left blind spot, over your left shoulder through the rear window, right blind spot and both mirrors. ' + extra,
+      text: (P.settings.auto ? 'Stop. Select reverse (R).' : 'Stop. Clutch fully down (Q), select reverse (R).') + ' Do full all-round observation: left blind spot, over your left shoulder through the rear window, right blind spot and both mirrors. ' + extra,
       look: 'allRound',
       checklist: st => [
         { label: 'Stopped', ok: st.stopped },
@@ -184,7 +187,7 @@
         prepReverse(),
         {
           title: 'Full right lock',
-          text: 'Find the biting point and creep back VERY slowly. As soon as the car moves, turn the wheel quickly to FULL RIGHT LOCK (hold D, about 1½ turns). Keep looking around: through the rear window and both mirrors.',
+          text: (P.settings.auto ? 'Release the handbrake and let the car creep back VERY slowly (tap the brake S to slow it).' : 'Find the biting point and creep back VERY slowly.') + ' As soon as the car moves, turn the wheel quickly to FULL RIGHT LOCK (hold D, about 1½ turns). Keep looking around: through the rear window and both mirrors.',
           look: 'rear',
           meter: st => ({ label: 'steering to full right lock', value: Math.max(0, 1 + st.sf) * 100, max: 100, unit: '%' }),
           warn: st => (st.x < xTurn - 0.5 && st.sf > -0.6) ? 'Turn now! Full right lock (D).' : null,
@@ -223,7 +226,7 @@
         analyze(rec, fin) {
           const S = rec.samples, out = [];
           const i0 = S.findIndex(s => s.g === 'R' && s.v < -0.05);
-          if (i0 < 0) return [item('Reversing', 'bad', 'No reversing was detected.', 'Select reverse (R) with the clutch down.')];
+          if (i0 < 0) return [item('Reversing', 'bad', 'No reversing was detected.', 'Select reverse (R) once the car has stopped.')];
           const d0 = S[i0].x - xStop;
           out.push(item('Where you stopped before reversing', Math.abs(d0) < 0.6 ? 'good' : 'warn',
             Math.abs(d0) < 0.6 ? 'Spot on.' : `${Math.abs(d0).toFixed(1)} m ${d0 > 0 ? 'past' : 'short of'} the ideal point.`,
@@ -290,7 +293,7 @@
         moveOff('1'),
         {
           title: 'Approach wide',
-          text: 'Creep along on the RIGHT side of the aisle, about 2 m from the bays on your left, so the car has room to swing in. Keep it slow: clutch at the biting point.',
+          text: 'Creep along on the RIGHT side of the aisle, about 2 m from the bays on your left, so the car has room to swing in. Keep it slow: ' + (P.settings.auto ? 'let it creep and use the brake.' : 'clutch at the biting point.'),
           ref: `Start turning FULL LEFT LOCK when ${turnRef.text}. (The yellow line shows it.)`,
           look: 'leftWindow', ghost: null, highlights: [{ type: 'line', x1: turnRef.line.x, z1: -L.half, x2: turnRef.line.x, z2: -L.half - L.depth }],
           meter: st => ({ label: 'to turning point', value: xStart - st.x, max: 10, unit: 'm' }),

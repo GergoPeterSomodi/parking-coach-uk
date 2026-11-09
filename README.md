@@ -33,9 +33,11 @@ The reference points ("stop when the second line after your bay lines up with yo
 
 For kerb distance there's a yellow **sticker on the bonnet** where the kerb appears at 30 cm, and a yellow **guide line in the door mirror**. These are the same tricks instructors teach.
 
-### Manual gearbox
+### Automatic or manual
 
-The clutch is on the **mouse wheel** (scroll down = press). There's a biting point, the creep speed depends on clutch position, and the engine stalls if you dump the clutch or brake without it. You have to select gears with the clutch down.
+Pick the gearbox in the menu. **Automatic** is the default and the easiest: in Drive or Reverse the car creeps slowly on its own and you brake to stop. The mouse wheel zooms.
+
+With **Manual**, the clutch is on the **mouse wheel** (scroll down = press). There's a biting point, the creep speed depends on clutch position, and the engine stalls if you dump the clutch or brake without it. You have to select gears with the clutch down.
 
 ### Observation is scored
 
@@ -45,11 +47,13 @@ In the driver's seat, look around with the mouse. The game tracks the blind spot
 
 | Key | Action |
 |---|---|
-| Mouse wheel | Clutch pedal (down = press) |
-| Q / E / B | Clutch fully down / fully up / to just below the biting point |
 | W / S | Gas / brake |
 | A / D | Steer (the wheel stays where you leave it at parking speeds) |
-| 1 2 R N | Gears |
+| 1 R N | Automatic: Drive / Reverse / Neutral |
+| 1 2 R N | Manual: gears (clutch down first) |
+| Mouse wheel | Automatic: zoom. Manual: clutch pedal (down = press) |
+| Q / E / B | Manual: clutch fully down / fully up / near the biting point |
+| F or hold right mouse | Zoom in (e.g. on a mirror) |
 | Space | Handbrake |
 | I | Restart the engine |
 | , . | Indicators |

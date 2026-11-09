@@ -57,7 +57,7 @@
     </div>
 
     <div id="pedals">
-      <div class="pedal">
+      <div class="pedal clutch">
         <div class="vbar"><div id="p-bite"></div><div id="p-clutch-fill"></div></div>
         <div class="lbl">clutch</div>
       </div>
@@ -84,10 +84,12 @@
   <div id="menu" class="overlay">
     <div class="panel wide">
       <h1>Parking Coach <span class="uk">UK</span></h1>
-      <p class="sub">Learn the DVSA test manoeuvres in a right-hand-drive manual car: what to look for, when to turn, when to stop.</p>
+      <p class="sub">Learn the DVSA test manoeuvres in a right-hand-drive car: what to look for, when to turn, when to stop.</p>
       <h3>1. Your car</h3>
       <div id="car-select" class="cards"></div>
-      <h3>2. Manoeuvre &amp; mode</h3>
+      <h3>2. Gearbox</h3>
+      <div id="gear-select" class="cards"></div>
+      <h3>3. Manoeuvre &amp; mode</h3>
       <p class="modes-help"><b>Demo</b>: the car drives itself and the camera looks where you should look. <b>Guided</b>: you drive, with step-by-step prompts, reference points and a ghost car. <b>Test</b>: no prompts; you are scored like on the test, then shown when you turned compared with the ideal.</p>
       <div id="level-list"></div>
       <div class="foot">
@@ -102,14 +104,14 @@
       <h2>Controls</h2>
       <div class="cols">
         <table>
-          <tr><th colspan="2">Driving (manual)</th></tr>
-          <tr><td><kbd>Mouse wheel</kbd></td><td>Clutch pedal: scroll <b>down</b> = press, <b>up</b> = release</td></tr>
-          <tr><td><kbd>Q</kbd> / <kbd>E</kbd></td><td>Clutch fully down / fully up</td></tr>
-          <tr><td><kbd>B</kbd></td><td>Clutch to just below the biting point</td></tr>
+          <tr><th colspan="2">Driving</th></tr>
           <tr><td><kbd>W</kbd> <kbd>↑</kbd></td><td>Gas</td></tr>
           <tr><td><kbd>S</kbd> <kbd>↓</kbd></td><td>Brake</td></tr>
           <tr><td><kbd>A</kbd> <kbd>D</kbd> / <kbd>←</kbd> <kbd>→</kbd></td><td>Steer (the wheel stays where you leave it)</td></tr>
-          <tr><td><kbd>1</kbd> <kbd>2</kbd> <kbd>R</kbd> <kbd>N</kbd></td><td>1st, 2nd, Reverse, Neutral (clutch down first!)</td></tr>
+          <tr><td><kbd>1</kbd> <kbd>R</kbd> <kbd>N</kbd></td><td>Automatic: Drive, Reverse, Neutral (stop first)</td></tr>
+          <tr><td><kbd>1</kbd> <kbd>2</kbd> <kbd>R</kbd> <kbd>N</kbd></td><td>Manual: 1st, 2nd, Reverse, Neutral (clutch down first!)</td></tr>
+          <tr><td><kbd>Mouse wheel</kbd></td><td>Manual: clutch pedal, scroll <b>down</b> = press, <b>up</b> = release. Automatic: zoom</td></tr>
+          <tr><td><kbd>Q</kbd> / <kbd>E</kbd> / <kbd>B</kbd></td><td>Manual: clutch fully down / fully up / near the biting point</td></tr>
           <tr><td><kbd>Space</kbd></td><td>Handbrake on/off</td></tr>
           <tr><td><kbd>I</kbd></td><td>Restart the engine after a stall</td></tr>
           <tr><td><kbd>,</kbd> <kbd>.</kbd></td><td>Indicate left / right</td></tr>
@@ -117,6 +119,7 @@
         <table>
           <tr><th colspan="2">Looking &amp; tools</th></tr>
           <tr><td><kbd>Click</kbd> + <kbd>Mouse</kbd></td><td>Look around (driver's seat). Turn your head to check blind spots and mirrors</td></tr>
+          <tr><td><kbd>F</kbd> or hold <kbd>Right mouse</kbd></td><td>Zoom in (great for reading the mirrors)</td></tr>
           <tr><td><kbd>Z</kbd></td><td>Look straight ahead again</td></tr>
           <tr><td><kbd>C</kbd></td><td>Change view: driver's seat → top-down → behind car</td></tr>
           <tr><td><kbd>-</kbd> <kbd>=</kbd></td><td>Zoom the top-down view</td></tr>
@@ -129,7 +132,9 @@
           <tr><td><kbd>Tab</kbd></td><td>Menu</td></tr>
         </table>
       </div>
-      <h3>Clutch control (the key to slow manoeuvres)</h3>
+      <h3>Automatic</h3>
+      <p>In Drive (<kbd>1</kbd>) or Reverse (<kbd>R</kbd>) the car creeps slowly on its own once the handbrake is off. Tap or hold the brake (<kbd>S</kbd>) to slow down or stop. You rarely need the gas while parking.</p>
+      <h3>Manual: clutch control (the key to slow manoeuvres)</h3>
       <ol class="tips">
         <li>Clutch fully down (<kbd>Q</kbd>), select the gear.</li>
         <li>Press <kbd>B</kbd> to bring the clutch near the biting point, then scroll <b>up</b> one notch at a time until the revs dip and the clutch bar turns orange (biting).</li>

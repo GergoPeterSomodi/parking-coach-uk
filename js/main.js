@@ -10,7 +10,7 @@
     specId: localStorage.getItem('pc.car') || 'tcross',
     levelIdx: 0, mode: 'guided', view: 'driver', running: false,
     yaw: 0, pitch: -0.08, topRot: 0, topH: 22, chaseYaw: 0, chasePitch: 0.38,
-    keys: {}, ind: 0, dip: false, guides: true, sensors: true,
+    keys: {}, ind: 0, dip: false, guides: true, sensors: true, zoom: 0, zoomHold: false, zoomNow: 0,
     stillTime: 0, armed: true, sensorT: 0, toastT: 0, hudT: 0, indT: 0, indOn: false,
   };
   window.PSGame = G; // for debugging
@@ -102,7 +102,8 @@
     ctx = L.build(world, spec);
     veh.reset(ctx.start.x, ctx.start.z, ctx.start.th);
     obs.reset();
-    G.yaw = 0; G.pitch = -0.08; G.ind = 0; G.dip = false; G.stillTime = 0; G.armed = true; G.time = 0;
+    G.yaw = 0; G.pitch = -0.08; G.ind = 0; G.dip = false; G.zoom = 0; G.zoomHold = false;
+    $('pedals').classList.toggle('auto', P.settings.auto); G.stillTime = 0; G.armed = true; G.time = 0;
     G.topRot = ctx.start.th; G.chaseYaw = 0;
     G.guides = mode !== 'test';
     G.view = 'driver';
@@ -225,12 +226,14 @@
       case 'Minus': G.topH = Math.min(70, G.topH * 1.15); break;
       case 'Equal': G.topH = Math.max(7, G.topH / 1.15); break;
       case 'KeyK': if (coach.mode === 'guided') { coach.skip(); S.click(); } break;
+      case 'KeyF': G.zoomHold = true; break;
     }
     if (demo) return;
+    const manual = !P.settings.auto;
     switch (e.code) {
-      case 'KeyQ': veh.clutch = 1; break;
-      case 'KeyE': veh.clutch = 0; break;
-      case 'KeyB': veh.clutch = 1 - (P.BITE_START - 0.03); break;
+      case 'KeyQ': if (manual) veh.clutch = 1; break;
+      case 'KeyE': if (manual) veh.clutch = 0; break;
+      case 'KeyB': if (manual) veh.clutch = 1 - (P.BITE_START - 0.03); break;
       case 'Digit1': veh.setGear('1'); break;
       case 'Digit2': veh.setGear('2'); break;
       case 'KeyR': veh.setGear('R'); break;
@@ -241,20 +244,31 @@
       case 'Period': G.ind = G.ind === 1 ? 0 : 1; break;
     }
   });
-  window.addEventListener('keyup', (e) => { if (keyMap[e.code]) G.keys[keyMap[e.code]] = false; });
-  window.addEventListener('blur', () => { G.keys = {}; });
+  window.addEventListener('keyup', (e) => { if (keyMap[e.code]) G.keys[keyMap[e.code]] = false; if (e.code === 'KeyF') G.zoomHold = false; });
+  window.addEventListener('blur', () => { G.keys = {}; G.zoomHold = false; });
   window.addEventListener('wheel', (e) => {
-    if (!G.running || coach.mode === 'demo') return;
+    if (!G.running) return;
     e.preventDefault();
     let d = e.deltaY || e.deltaX;
     if (e.deltaMode === 1) d *= 33;
-    const step = (e.shiftKey ? 0.008 : 0.025) * Math.sign(d) * Math.min(3, Math.max(1, Math.abs(d) / 100));
-    veh.clutch = P.clamp(veh.clutch + step, 0, 1);
+    const notches = Math.sign(d) * Math.min(3, Math.max(1, Math.abs(d) / 100));
+    // manual: wheel = clutch pedal. automatic (or demo): wheel = zoom
+    if (!P.settings.auto && coach.mode !== 'demo') {
+      veh.clutch = P.clamp(veh.clutch + (e.shiftKey ? 0.008 : 0.025) * notches, 0, 1);
+    } else if (G.view === 'top') {
+      G.topH = P.clamp(G.topH * (1 + 0.12 * notches), 7, 70);
+    } else {
+      G.zoom = P.clamp(G.zoom - 0.12 * notches, 0, 1);
+    }
   }, { passive: false });
   canvas.addEventListener('click', () => { S.init(); if (G.running && document.pointerLockElement !== canvas) canvas.requestPointerLock(); });
+  // hold the right mouse button to zoom in (e.g. on a mirror)
+  canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+  canvas.addEventListener('mousedown', (e) => { if (e.button === 2) G.zoomHold = true; });
+  window.addEventListener('mouseup', (e) => { if (e.button === 2) G.zoomHold = false; });
   document.addEventListener('mousemove', (e) => {
     if (document.pointerLockElement !== canvas) return;
-    const k = 0.0024;
+    const k = 0.0024 * (G.view === 'driver' ? driverCam.fov / 72 : 1);  // slower look when zoomed in
     if (G.view === 'driver') {
       if (coach.mode === 'demo') return;
       G.yaw = P.clamp(G.yaw - e.movementX * k, -3.0, 3.0);
@@ -445,6 +459,9 @@
   function render() {
     if (!car) { renderer.render(scene, topCam); return; }
     let cam = driverCam;
+    G.zoomNow += ((G.zoomHold ? 1 : G.zoom) - G.zoomNow) * 0.2;
+    const fov = 72 - 48 * G.zoomNow;
+    if (Math.abs(driverCam.fov - fov) > 0.01) { driverCam.fov = fov; driverCam.updateProjectionMatrix(); }
     if (G.view === 'top') {
       cam = topCam;
       topCam.position.set(veh.cx, G.topH, veh.cz);
@@ -482,7 +499,7 @@
     $('top-view').textContent = VIEW_NAMES[G.view] + ' (C)';
     // dash
     $('d-speed').textContent = (Math.abs(veh.v) * 2.237).toFixed(Math.abs(veh.v) < 4.4 ? 1 : 0);
-    $('d-gear').textContent = veh.gear;
+    $('d-gear').textContent = P.settings.auto && veh.gear === '1' ? 'D' : veh.gear;
     $('d-rpm').textContent = Math.round(veh.rpm);
     $('d-rpm-fill').style.width = `${P.clamp(veh.rpm / 4500, 0, 1) * 100}%`;
     $('d-hb').classList.toggle('off', !veh.handbrake);
@@ -500,7 +517,7 @@
     const pedalUp = 1 - veh.clutch;
     cf.classList.toggle('biting', pedalUp > P.BITE_START && pedalUp < P.BITE_FULL);
     cf.classList.toggle('engaged', pedalUp >= P.BITE_FULL);
-    $('p-clutch-label').textContent = pedalUp <= P.BITE_START ? 'Clutch down' : pedalUp < P.BITE_FULL ? `Biting point ${Math.round(Math.sqrt(e) * 100)}%` : 'Clutch up';
+    $('p-clutch-label').textContent = P.settings.auto ? (G.zoomNow > 0.05 ? `Zoom ${Math.round(72 / driverCam.fov * 10) / 10}×` : '') : pedalUp <= P.BITE_START ? 'Clutch down' : pedalUp < P.BITE_FULL ? `Biting point ${Math.round(Math.sqrt(e) * 100)}%` : 'Clutch up';
     $('p-brake-fill').style.height = `${veh.brake * 100}%`;
     $('p-gas-fill').style.height = `${veh.throttle * 100}%`;
     const turns = veh.steer * spec.steerRatio / (2 * Math.PI);
@@ -631,6 +648,15 @@
       d.innerHTML = `<b>${c.name}</b><span>${c.blurb} · turning circle ≈ ${(2 * Math.hypot(c.R + c.halfW, c.wheelbase + c.frontOverhang)).toFixed(1)} m</span>`;
       d.onclick = () => { G.specId = c.id; localStorage.setItem('pc.car', c.id); renderMenu(); };
       cs.appendChild(d);
+    }
+    const gs = $('gear-select');
+    gs.innerHTML = '';
+    for (const [auto, name, blurb] of [[true, 'Automatic', 'Easier: the car creeps by itself, brake to stop. Mouse wheel zooms.'], [false, 'Manual', 'Clutch on the mouse wheel, biting point, stalling. Like most UK tests.']]) {
+      const d = document.createElement('div');
+      d.className = 'card' + (P.settings.auto === auto ? ' sel' : '');
+      d.innerHTML = `<b>${name}</b><span>${blurb}</span>`;
+      d.onclick = () => { P.settings.auto = auto; try { localStorage.setItem('pc.auto', auto ? '1' : '0'); } catch (e) { /* ignore */ } renderMenu(); };
+      gs.appendChild(d);
     }
     const ll = $('level-list');
     ll.innerHTML = '';

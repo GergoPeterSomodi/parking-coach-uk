@@ -5,6 +5,9 @@
 window.PS = window.PS || {};
 
 (function (P) {
+  let savedAuto = null;
+  try { savedAuto = localStorage.getItem('pc.auto'); } catch (e) { /* storage blocked */ }
+  P.settings = { auto: savedAuto !== '0' };   // automatic gearbox by default
   P.CARS = {
     tcross: {
       id: 'tcross', name: 'VW T-Cross', blurb: 'Small SUV, 4.11 m long',

@@ -13,8 +13,8 @@
     const dirTo = (x, y, z) => { const dx = x - e.x, dy = y - e.y, dz = z - e.z; return { yaw: Math.atan2(dx, dz), pitch: Math.atan2(dy, Math.hypot(dx, dz)) }; };
     return {
       front: { yaw: 0, pitch: -0.08 },
-      leftMirror: dirTo(m.x, m.y, m.z - 0.04),
-      rightMirror: dirTo(-m.x, m.y, m.z - 0.04),
+      leftMirror: dirTo(m.x + 0.06, m.y, m.z - 0.04),
+      rightMirror: dirTo(-m.x - 0.06, m.y, m.z - 0.04),
       interiorMirror: dirTo(0, spec.height - 0.15, spec.roofFront + 0.06),
       leftShoulder: { yaw: rad(118), pitch: -0.1 },
       rightShoulder: { yaw: rad(-118), pitch: -0.1 },

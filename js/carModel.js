@@ -60,9 +60,10 @@
     g.add(roof);
     const ax = hw - 0.07, tx = hw - 0.12;
     for (const s of [1, -1]) {
-      g.add(beam([s * ax, belt, be], [s * tx, roofTop, rf], 0.07, paint));                              // A pillar
-      g.add(beam([s * ax, belt, spec.eye.z - 0.32], [s * tx, roofTop, spec.eye.z - 0.32], 0.08, paint));// B pillar
-      g.add(beam([s * ax, belt, -hl + 0.1], [s * tx, roofTop, rr], 0.12, paint));                       // D pillar
+      // pillars kept slim so the view out (especially backwards) is clear
+      g.add(beam([s * ax, belt, be], [s * tx, roofTop, rf], 0.05, paint));                              // A pillar
+      g.add(beam([s * ax, belt, spec.eye.z - 0.32], [s * tx, roofTop, spec.eye.z - 0.32], 0.05, paint));// B pillar
+      g.add(beam([s * ax, belt, -hl + 0.1], [s * tx, roofTop, rr], 0.06, paint));                       // D pillar
     }
     // glass
     g.add(quad([ax, belt, be], [-ax, belt, be], [-tx, roofTop, rf], [tx, roofTop, rf], M.glass));        // windscreen
@@ -108,14 +109,15 @@
     // door mirrors (housing + glass). Glass faces backwards (-z).
     out.mirrors = {};
     for (const [s, key] of [[1, 'left'], [-1, 'right']]) {
-      const m = spec.mirror;
-      g.add(box(0.26, 0.17, 0.11, paint, s * m.x, m.y, m.z + 0.02));
-      g.add(box(0.12, 0.05, 0.06, M.black, s * (m.x - 0.13), m.y - 0.05, m.z + 0.02));
-      const glass = new THREE.Mesh(new THREE.PlaneGeometry(0.23, 0.14), new THREE.MeshBasicMaterial({ color: 0x8899aa }));
-      glass.position.set(s * m.x, m.y, m.z - 0.04);
+      // door mirrors are drawn larger than real life so they're readable on a screen
+      const m = spec.mirror, mx = m.x + 0.06;
+      g.add(box(0.36, 0.23, 0.11, paint, s * mx, m.y, m.z + 0.02));
+      g.add(box(0.14, 0.05, 0.06, M.black, s * (mx - 0.2), m.y - 0.06, m.z + 0.02));
+      const glass = new THREE.Mesh(new THREE.PlaneGeometry(0.33, 0.20), new THREE.MeshBasicMaterial({ color: 0x8899aa }));
+      glass.position.set(s * mx, m.y, m.z - 0.04);
       glass.rotation.y = Math.PI;
       g.add(glass);
-      out.mirrors[key] = { glass, pos: new THREE.Vector3(s * m.x, m.y, m.z - 0.05) };
+      out.mirrors[key] = { glass, pos: new THREE.Vector3(s * mx, m.y, m.z - 0.05) };
     }
 
     if (opts.player) {
@@ -126,10 +128,10 @@
       for (const s of [1, -1]) {
         const sx = s * Math.abs(spec.eye.x);
         g.add(box(0.5, 0.12, 0.5, M.seat, sx, sill + 0.28, spec.eye.z - 0.05));
-        g.add(box(0.5, 0.65, 0.12, M.seat, sx, sill + 0.65, spec.eye.z - 0.32));
-        g.add(box(0.26, 0.2, 0.1, M.seat, sx, spec.eye.y + 0.02, spec.eye.z - 0.36));                      // headrest
+        // low seat backs and no headrests, so looking over the shoulder isn't blocked
+        g.add(box(0.5, 0.45, 0.12, M.seat, sx, sill + 0.55, spec.eye.z - 0.32));
       }
-      g.add(box(spec.width - 0.3, 0.6, 0.15, M.seat, 0, sill + 0.55, -spec.cOff + 0.15));                  // rear bench back
+      g.add(box(spec.width - 0.3, 0.32, 0.15, M.seat, 0, sill + 0.42, -spec.cOff + 0.15));                 // rear bench back
       // steering wheel on the RIGHT
       const swTilt = new THREE.Group();
       swTilt.position.set(spec.eye.x, spec.eye.y - 0.43, spec.eye.z + 0.6);
@@ -145,8 +147,8 @@
       out.steeringWheel = sw;
       // interior mirror
       const im = { x: 0, y: H - 0.15, z: rf + 0.06 };
-      g.add(box(0.27, 0.08, 0.03, M.black, im.x, im.y, im.z + 0.015));
-      const iglass = new THREE.Mesh(new THREE.PlaneGeometry(0.25, 0.065), new THREE.MeshBasicMaterial({ color: 0x8899aa }));
+      g.add(box(0.37, 0.11, 0.03, M.black, im.x, im.y, im.z + 0.015));
+      const iglass = new THREE.Mesh(new THREE.PlaneGeometry(0.35, 0.092), new THREE.MeshBasicMaterial({ color: 0x8899aa }));
       iglass.position.set(im.x, im.y, im.z - 0.002);
       iglass.rotation.y = Math.PI;
       g.add(iglass);
