@@ -103,6 +103,7 @@
     veh.reset(ctx.start.x, ctx.start.z, ctx.start.th);
     obs.reset();
     G.yaw = 0; G.pitch = -0.08; G.ind = 0; G.dip = false; G.zoom = 0; G.zoomHold = false;
+    G.lastContact = -99; G.lastCrashSound = -99;
     $('pedals').classList.toggle('auto', P.settings.auto); G.stillTime = 0; G.armed = true; G.time = 0;
     G.topRot = ctx.start.th; G.chaseYaw = 0;
     G.guides = mode !== 'test';
@@ -342,12 +343,18 @@
       if (hit) {
         const impact = Math.abs(veh.v);
         veh.restore(prev); veh.v = 0;
+        // play the sound only for a fresh hit: not while still pushing against the same thing,
+        // and at most once every 2 seconds
+        const newContact = G.time - (G.lastContact ?? -99) > 0.6;
+        const fresh = newContact && G.time - (G.lastCrashSound ?? -99) > 2;
+        G.lastContact = G.time;
+        if (fresh) G.lastCrashSound = G.time;
         if (o.kind === 'kerb') {
-          S.kerb();
-          if (coach.fault('kerb', 'minor', 'Touched the kerb')) toast('Kerb!', 0.8);
+          if (fresh) S.kerb();
+          if (newContact && coach.fault('kerb', 'minor', 'Touched the kerb')) toast('Kerb!', 0.8);
         } else {
-          S.bump();
-          if (coach.fault('hit-' + o.kind, 'serious', o.kind === 'car' ? 'Hit a parked car' : 'Hit an obstacle')) toast('Bump!', 0.8);
+          if (fresh) S.bump();
+          if (newContact && coach.fault('hit-' + o.kind, 'serious', o.kind === 'car' ? 'Hit a parked car' : 'Hit an obstacle')) toast('Bump!', 0.8);
         }
         return impact;
       }
