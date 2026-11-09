@@ -250,6 +250,7 @@
     switch (e.code) {
       case 'KeyC': G.view = VIEWS[(VIEWS.indexOf(G.view) + 1) % VIEWS.length]; toast(VIEW_NAMES[G.view], 1); break;
       case 'KeyZ': G.yaw = 0; G.pitch = -0.08; G.chaseYaw = 0; break;
+      case 'KeyV': toggleMute(); break;
       case 'KeyT': G.minimap = !G.minimap; try { localStorage.setItem('pc.minimap', G.minimap ? '1' : '0'); } catch (err) { /* ignore */ } toast('Top-view box ' + (G.minimap ? 'on' : 'off'), 1); break;
       case 'KeyM': G.dip = !G.dip; aimMirrors(); toast(G.dip ? 'Left mirror dipped (kerb view)' : 'Left mirror normal', 1.2); break;
       case 'KeyG': G.guides = !G.guides; toast('Guide lines ' + (G.guides ? 'on' : 'off'), 1); break;
@@ -718,6 +719,18 @@
     G.helpFromGame = !$('hud').classList.contains('hidden') && $('menu').classList.contains('hidden');
     hideOverlays(); $('help').classList.remove('hidden');
   }
+  // mute
+  function refreshMute() {
+    const m = S.muted;
+    $('mute-btn').textContent = m ? '🔇' : '🔊';
+    $('mute-btn').classList.toggle('off', m);
+    $('menu-mute-btn').textContent = m ? '🔇 Sound off' : '🔊 Sound on';
+  }
+  function toggleMute() { S.setMuted(!S.muted); refreshMute(); toast(S.muted ? 'Sound off' : 'Sound on', 1); }
+  for (const id of ['mute-btn', 'menu-mute-btn']) {
+    $(id).onclick = (e) => { toggleMute(); e.currentTarget.blur(); };   // blur so Space doesn't press it again
+  }
+  refreshMute();
   $('btn-help').onclick = showHelp;
   $('btn-help-close').onclick = () => {
     hideOverlays();

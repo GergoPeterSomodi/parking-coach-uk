@@ -20,6 +20,8 @@ kbd { display: inline-block; padding: 1px 6px; border-radius: 4px; background: #
 #top-level { font-weight: 600; }
 .pill { padding: 1px 8px; border-radius: 99px; background: var(--accent); color: #062; font-weight: 700; font-size: 12px; text-transform: uppercase; }
 .pill.dim { background: #2a323d; color: var(--dim); }
+.mute { pointer-events: auto; padding: 2px 8px; font-size: 15px; line-height: 1.2; background: #2a323d; color: #fff; border-radius: 8px; }
+.mute.off { background: #5a2020; }
 #top-time { font-variant-numeric: tabular-nums; color: var(--dim); }
 
 #coach { position: absolute; top: 10px; left: 12px; width: min(420px, calc(100vw - 24px)); background: var(--bg); border-radius: 12px; padding: 12px 14px; border-left: 4px solid var(--accent); }

@@ -1,7 +1,15 @@
 // Tiny WebAudio sound kit: engine hum, parking-sensor beeps, bumps, gear grind, indicator ticks.
 (function (P) {
   class Sound {
-    constructor() { this.ctx = null; this.muted = false; }
+    constructor() {
+      this.ctx = null;
+      try { this.muted = localStorage.getItem('pc.muted') === '1'; } catch (e) { this.muted = false; }
+    }
+    setMuted(m) {
+      this.muted = m;
+      try { localStorage.setItem('pc.muted', m ? '1' : '0'); } catch (e) { /* ignore */ }
+      if (this.ctx) this.engGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.02);
+    }
     init() {
       if (this.ctx) { if (this.ctx.state === 'suspended') this.ctx.resume(); return; }
       try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
