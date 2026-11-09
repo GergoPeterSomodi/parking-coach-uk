@@ -64,6 +64,7 @@ In the driver's seat, look around with the mouse. The game tracks the blind spot
 | C | Driver's seat / top-down / chase view |
 | T | Show/hide the small top-view box while driving |
 | V | Sound on/off (or click the speaker button at the top) |
+| Y | Voice coach: repeat the current instruction |
 | M | Dip the left mirror |
 | G / P | Guide lines / parking sensors |
 | Backspace / Enter / Tab | Restart / finish attempt / menu |
@@ -80,6 +81,7 @@ js/world.js       car parks, roads, parked cars, collisions
 js/levels.js      the manoeuvres: coaching steps, reference points, scoring
 js/coach.js       observation tracking, guided/demo step runner, faults
 js/audio.js       engine, parking sensors, bumps
+js/voice.js       voice coach (browser speech)
 js/main.js        renderer, cameras, input, HUD, debrief
 ```
 

@@ -91,7 +91,9 @@
       <div id="car-select" class="cards"></div>
       <h3>2. Gearbox</h3>
       <div id="gear-select" class="cards"></div>
-      <h3>3. Manoeuvre &amp; mode</h3>
+      <h3>3. Voice coach</h3>
+      <div id="voice-select" class="cards"></div>
+      <h3>4. Manoeuvre &amp; mode</h3>
       <p class="modes-help"><b>Demo</b>: the car drives itself and the camera looks where you should look. <b>Guided</b>: you drive, with step-by-step prompts, reference points and a ghost car. <b>Test</b>: no prompts; you are scored like on the test, then shown when you turned compared with the ideal.</p>
       <div id="level-list"></div>
       <div class="foot">
@@ -127,6 +129,7 @@
           <tr><td><kbd>C</kbd></td><td>Change view: driver's seat → top-down → behind car</td></tr>
           <tr><td><kbd>T</kbd></td><td>Show/hide the small top-view box (see the car from above while driving)</td></tr>
           <tr><td><kbd>V</kbd></td><td>Sound on/off (or click 🔊 at the top)</td></tr>
+          <tr><td><kbd>Y</kbd></td><td>Voice coach: repeat the current instruction</td></tr>
           <tr><td><kbd>-</kbd> <kbd>=</kbd></td><td>Zoom the top-down view</td></tr>
           <tr><td><kbd>M</kbd></td><td>Dip the left door mirror (to see the kerb)</td></tr>
           <tr><td><kbd>G</kbd></td><td>Guide lines showing where the car will go</td></tr>
@@ -166,6 +169,7 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
   <script src="js/config.js"></script>
   <script src="js/audio.js"></script>
+  <script src="js/voice.js"></script>
   <script src="js/carModel.js"></script>
   <script src="js/vehicle.js"></script>
   <script src="js/world.js"></script>

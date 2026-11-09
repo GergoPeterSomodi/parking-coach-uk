@@ -95,7 +95,9 @@
     // returns autopilot command (demo) or null
     update(dt, st) {
       if (!this.active || this.finished) return null;
-      this.time += dt; this.stepT += dt; st.stepT = this.stepT;
+      this.time += dt;
+      if (!this.paused) this.stepT += dt;   // paused while the demo waits for the voice
+      st.stepT = this.stepT;
       // record
       this.sampleT += dt;
       if (this.sampleT >= 0.1) {

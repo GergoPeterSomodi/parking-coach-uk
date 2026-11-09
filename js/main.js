@@ -106,6 +106,7 @@
     obs.reset();
     G.yaw = 0; G.pitch = -0.08; G.ind = 0; G.dip = false; G.zoom = 0; G.zoomHold = false;
     G.lastContact = -99; G.lastCrashSound = -99;
+    P.voice.stop(); G.voiceHold = false;
     $('pedals').classList.toggle('auto', P.settings.auto); G.stillTime = 0; G.armed = true; G.time = 0;
     G.topRot = ctx.start.th; G.chaseYaw = 0;
     G.guides = mode !== 'test';
@@ -251,6 +252,7 @@
       case 'KeyC': G.view = VIEWS[(VIEWS.indexOf(G.view) + 1) % VIEWS.length]; toast(VIEW_NAMES[G.view], 1); break;
       case 'KeyZ': G.yaw = 0; G.pitch = -0.08; G.chaseYaw = 0; break;
       case 'KeyV': toggleMute(); break;
+      case 'KeyY': if (coach.step && P.voice.on) speakStep(coach.step, buildState(0)); else if (!P.voice.on) toast('Voice coach is off (turn it on in the menu)', 1.5); break;
       case 'KeyT': G.minimap = !G.minimap; try { localStorage.setItem('pc.minimap', G.minimap ? '1' : '0'); } catch (err) { /* ignore */ } toast('Top-view box ' + (G.minimap ? 'on' : 'off'), 1); break;
       case 'KeyM': G.dip = !G.dip; aimMirrors(); toast(G.dip ? 'Left mirror dipped (kerb view)' : 'Left mirror normal', 1.2); break;
       case 'KeyG': G.guides = !G.guides; toast('Guide lines ' + (G.guides ? 'on' : 'off'), 1); break;
@@ -406,7 +408,12 @@
     st.stillTime = G.stillTime;
     if (G.armed && Math.abs(veh.v) > 0.1) { st.justMoved = true; G.armed = false; }
 
+    coach.paused = demo && G.voiceHold && P.voice.busy();
     const ap = coach.update(dt, st);
+    // Demo: wait (car still, wheel held) while the voice reads the new step, so there's time to listen
+    if (demo && ap && G.voiceHold) {
+      if (P.voice.busy()) { ap.v = 0; ap.steer = veh.steer; } else G.voiceHold = false;
+    }
     if (demo && ap) applyAutopilot(ap, dt);
     else veh.auto = null;
 
@@ -475,6 +482,17 @@
         const c = { x: stp.ghost.x + Math.sin(stp.ghost.th) * spec.cOff, z: stp.ghost.z + Math.cos(stp.ghost.th) * spec.cOff };
         ghost.position.set(c.x, 0, c.z); ghost.rotation.y = stp.ghost.th; ghost.visible = true;
       } else ghost.visible = false;
+      // voice: read the new step
+      G.saidStop = false; G.lastWarn = '';
+      if (showAids && stp) { speakStep(stp, st); G.voiceHold = demo; }
+    }
+    // voice cues during a step: "Stop" at a stop point, and warnings like "Straighten now"
+    if (showAids && stp && P.voice.on) {
+      const m = stp.meter ? stp.meter(st) : null;
+      if (m && m.unit === 'm' && m.target == null && m.value < 0.25 && !G.saidStop && !G.voiceHold) { G.saidStop = true; P.voice.say('Stop.', false); }
+      const w = coach.mode === 'guided' && stp.warn ? (stp.warn(st) || '') : '';
+      if (w && w !== G.lastWarn) P.voice.say(w.split(/[.:!]/)[0] + '.', true);
+      G.lastWarn = w;
     }
     const pulse = 0.55 + 0.45 * Math.sin(G.time * 6);
     G.highlights.children.forEach(m => { if (m.userData.pulse) m.material.opacity = pulse; });
@@ -708,6 +726,7 @@
   function toggleMenu() {
     if (!$('menu').classList.contains('hidden')) { if (ctx && !coach.finished) { hideOverlays(); G.running = true; } return; }
     G.running = false; G.keys = {};
+    P.voice.stop();
     if (document.pointerLockElement) document.exitPointerLock();
     renderMenu();
     hideOverlays();
@@ -726,7 +745,12 @@
     $('mute-btn').classList.toggle('off', m);
     $('menu-mute-btn').textContent = m ? '🔇 Sound off' : '🔊 Sound on';
   }
-  function toggleMute() { S.setMuted(!S.muted); refreshMute(); toast(S.muted ? 'Sound off' : 'Sound on', 1); }
+  function toggleMute() { S.setMuted(!S.muted); if (S.muted) P.voice.stop(); refreshMute(); toast(S.muted ? 'Sound off' : 'Sound on', 1); }
+  // read a guided step aloud: title, instruction and the reference point
+  function speakStep(stp, st) {
+    const ref = stp.ref ? (typeof stp.ref === 'function' ? stp.ref(st) : stp.ref) : '';
+    P.voice.say(`${stp.title}. ${stp.text} ${ref}`, true);
+  }
   for (const id of ['mute-btn', 'menu-mute-btn']) {
     $(id).onclick = (e) => { toggleMute(); e.currentTarget.blur(); };   // blur so Space doesn't press it again
   }
@@ -762,6 +786,25 @@
       d.onclick = () => { P.settings.drive = drive; try { localStorage.setItem('pc.drive', drive); } catch (e) { /* ignore */ } renderMenu(); };
       gs.appendChild(d);
     }
+    const vs = $('voice-select');
+    vs.innerHTML = '';
+    for (const [voice, name, blurb] of [
+      ['slow', 'Voice: slower', 'Reads each step and calls out "Stop" and "Straighten now". Demo waits for it to finish.'],
+      ['normal', 'Voice: normal speed', 'Same, at normal talking speed.'],
+      ['off', 'Voice off', 'Text only.'],
+    ]) {
+      const d = document.createElement('div');
+      d.className = 'card' + (P.settings.voice === voice ? ' sel' : '');
+      d.innerHTML = `<b>${name}</b><span>${blurb}</span>`;
+      d.onclick = () => {
+        P.settings.voice = voice;
+        try { localStorage.setItem('pc.voice', voice); } catch (e) { /* ignore */ }
+        P.voice.say(voice === 'off' ? '' : 'Voice coach on. I will read each step to you.');
+        renderMenu();
+      };
+      vs.appendChild(d);
+    }
+    if (!P.voice.available) vs.innerHTML = '<span class="sub">This browser has no speech support.</span>';
     const ll = $('level-list');
     ll.innerHTML = '';
     P.LEVELS.forEach((L, i) => {
@@ -784,6 +827,7 @@
 
   function showDebrief(res) {
     G.running = false; G.keys = {};
+    P.voice.stop();
     if (document.pointerLockElement) document.exitPointerLock();
     const L = P.LEVELS[G.levelIdx];
     const t = `${Math.floor(res.time / 60)}:${String(Math.floor(res.time % 60)).padStart(2, '0')}`;

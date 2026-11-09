@@ -6,10 +6,11 @@ window.PS = window.PS || {};
 
 (function (P) {
   // drive: 'easy' (game-style arrows), 'auto' (realistic automatic) or 'manual'
-  let saved = null;
-  try { saved = localStorage.getItem('pc.drive'); } catch (e) { /* storage blocked */ }
+  let saved = null, savedVoice = null;
+  try { saved = localStorage.getItem('pc.drive'); savedVoice = localStorage.getItem('pc.voice'); } catch (e) { /* storage blocked */ }
   P.settings = {
     drive: ['easy', 'auto', 'manual'].includes(saved) ? saved : 'easy',
+    voice: ['off', 'normal', 'slow'].includes(savedVoice) ? savedVoice : 'slow',   // voice coach
     get auto() { return this.drive !== 'manual'; },   // automatic gearbox physics
     get easy() { return this.drive === 'easy'; },     // arrows pick the gear, opposite arrow brakes
   };
