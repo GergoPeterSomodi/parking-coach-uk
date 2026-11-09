@@ -142,9 +142,9 @@
     $('hint').innerHTML = mode === 'demo'
       ? 'Demo: the car drives itself · <b>C</b> change view · <b>Tab</b> menu'
       : (P.settings.auto
-        ? 'Start: <b>1</b> Drive (<b>R</b> reverse) · <b>Space</b> handbrake off · <b>W</b>/<b>S</b> gas/brake · <b>A</b>/<b>D</b> steer · drag the mouse to look around · <b>H</b> help'
-        : 'Start: <b>Q</b> clutch down · <b>1</b> gear · <b>B</b> + scroll up to bite · <b>Space</b> handbrake off · drag the mouse to look around · <b>H</b> help');
-    toast(mode === 'demo' ? 'Watch: the camera looks where you should look' : (P.settings.auto ? 'Press 1 for Drive, then Space to release the handbrake' : 'Clutch down (Q), 1st gear (1), find the bite, release the handbrake (Space)'), 4);
+        ? '<b>↑</b> forward · <b>↓</b> reverse · <b>Space</b> brake · <b>←</b>/<b>→</b> steer · <b>H</b> handbrake · drag the mouse to look around · <b>F1</b> help'
+        : 'Start: <b>Q</b> clutch down · <b>1</b> gear · <b>B</b> + scroll up to bite · <b>H</b> handbrake off · <b>Space</b> brake · drag the mouse to look around · <b>F1</b> help');
+    toast(mode === 'demo' ? 'Watch: the camera looks where you should look' : (P.settings.auto ? 'Press ↑ to drive forwards, ↓ to reverse, Space to brake' : 'Clutch down (Q), 1st gear (1), find the bite, release the handbrake (H)'), 4);
   }
 
   function clearGroup(g) { while (g.children.length) { const c = g.children.pop(); c.traverse(o => o.geometry && o.geometry.dispose()); } }
@@ -211,7 +211,8 @@
   }
 
   // ---------------------------------------------------------------- input
-  const keyMap = { KeyW: 'gas', ArrowUp: 'gas', KeyS: 'brake', ArrowDown: 'brake', KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right' };
+  // Up/W = go forwards, Down/S = go backwards (selects reverse), Space = brake
+  const keyMap = { KeyW: 'gas', ArrowUp: 'gas', KeyS: 'back', ArrowDown: 'back', Space: 'brake', KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right' };
   window.addEventListener('keydown', (e) => {
     S.init();
     if (e.code === 'Tab') { e.preventDefault(); toggleMenu(); return; }
@@ -219,17 +220,22 @@
     if (keyMap[e.code]) { G.keys[keyMap[e.code]] = true; e.preventDefault(); }
     if (e.repeat) return;
     const demo = coach.mode === 'demo';
-    // explain why the car isn't moving
-    if (keyMap[e.code]) {
-      const kind = keyMap[e.code];
-      if (demo) toast('Demo: the car drives itself. Press Tab and choose Guided or Test to drive.', 3);
-      else if (kind === 'gas' || kind === 'brake') {
-        const why = [];
-        if (!veh.engineOn && !P.settings.auto) why.push('start the engine (I)');
-        if (veh.gear === 'N') why.push(P.settings.auto ? 'select Drive (1) or Reverse (R)' : 'select a gear: clutch down (Q), then 1 or R');
-        if (veh.handbrake) why.push('release the handbrake (Space)');
-        if (why.length && kind === 'gas') toast('To move: ' + why.join(', then '), 3);
+    if (keyMap[e.code] && demo) toast('Demo: the car drives itself. Press Tab and choose Guided or Test to drive.', 3);
+    // forward/back keys pick the gear for you
+    const kind = keyMap[e.code];
+    if (!demo && (kind === 'gas' || kind === 'back')) {
+      const want = kind === 'back' ? 'R' : '1';
+      const wrong = kind === 'back' ? veh.gear !== 'R' : (veh.gear === 'R' || veh.gear === 'N');
+      if (wrong) {
+        if (Math.abs(veh.v) > 0.3) toast('Stop first (brake: Space), then change direction', 2);
+        else veh.setGear(want);
       }
+      if (P.settings.auto && veh.handbrake) { veh.handbrake = false; toast('Handbrake released', 1.2); }
+      const why = [];
+      if (!veh.engineOn && !P.settings.auto) why.push('start the engine (I)');
+      if (!P.settings.auto && veh.gear !== want) why.push('press the clutch down (Q) to change gear');
+      if (veh.handbrake) why.push('release the handbrake (H)');
+      if (why.length) toast('To move: ' + why.join(', then '), 3);
     }
     switch (e.code) {
       case 'KeyC': G.view = VIEWS[(VIEWS.indexOf(G.view) + 1) % VIEWS.length]; toast(VIEW_NAMES[G.view], 1); break;
@@ -237,7 +243,7 @@
       case 'KeyM': G.dip = !G.dip; aimMirrors(); toast(G.dip ? 'Left mirror dipped (kerb view)' : 'Left mirror normal', 1.2); break;
       case 'KeyG': G.guides = !G.guides; toast('Guide lines ' + (G.guides ? 'on' : 'off'), 1); break;
       case 'KeyP': G.sensors = !G.sensors; toast('Parking sensors ' + (G.sensors ? 'on' : 'off'), 1); break;
-      case 'KeyH': showHelp(); break;
+      case 'F1': case 'Slash': e.preventDefault(); showHelp(); break;
       case 'Backspace': e.preventDefault(); loadLevel(G.levelIdx, G.mode); break;
       case 'Enter': coach.finish(buildState(0), false); break;
       case 'Minus': G.topH = Math.min(70, G.topH * 1.15); break;
@@ -255,7 +261,7 @@
       case 'Digit2': veh.setGear('2'); break;
       case 'KeyR': veh.setGear('R'); break;
       case 'KeyN': case 'Digit0': veh.gear = 'N'; veh.emit('gear', 'N'); break;
-      case 'Space': e.preventDefault(); veh.handbrake = !veh.handbrake; S.click(); break;
+      case 'KeyH': veh.handbrake = !veh.handbrake; S.click(); toast(veh.handbrake ? 'Handbrake on' : 'Handbrake off', 1); break;
       case 'KeyI': veh.startEngine(); break;
       case 'Comma': G.ind = G.ind === -1 ? 0 : -1; break;
       case 'Period': G.ind = G.ind === 1 ? 0 : 1; break;
@@ -386,7 +392,9 @@
     if (demo && ap) applyAutopilot(ap, dt);
     else veh.auto = null;
 
-    const input = demo ? {} : { gas: G.keys.gas, brake: G.keys.brake, left: G.keys.left, right: G.keys.right };
+    // Up = gas while going forwards, Down = gas while in reverse
+    const gas = (G.keys.gas && veh.gear !== 'R') || (G.keys.back && veh.gear === 'R');
+    const input = demo ? {} : { gas, brake: G.keys.brake, left: G.keys.left, right: G.keys.right };
     veh.update(dt, input);
     collide(prev);
 

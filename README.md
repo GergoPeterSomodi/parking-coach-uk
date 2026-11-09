@@ -1,6 +1,6 @@
 # Parking Coach UK
 
-A 3D browser parking simulator for learning the four **DVSA driving test manoeuvres** in a **right-hand-drive manual** car: what to look for, roughly when to start turning and in which direction, and when to stop.
+A 3D browser parking simulator for learning the four **DVSA driving test manoeuvres** in a **right-hand-drive** car (automatic or manual): what to look for, roughly when to start turning and in which direction, and when to stop.
 
 ## Play
 
@@ -47,17 +47,20 @@ In the driver's seat, look around with the mouse. The game tracks the blind spot
 
 | Key | Action |
 |---|---|
-| W / S | Gas / brake |
+| ↑ / W | Drive forwards (picks Drive when stopped) |
+| ↓ / S | Reverse (picks reverse when stopped) |
+| Space | Brake |
 | A / D | Steer (the wheel stays where you leave it at parking speeds) |
 | 1 R N | Automatic: Drive / Reverse / Neutral |
 | 1 2 R N | Manual: gears (clutch down first) |
 | Mouse wheel | Automatic: zoom. Manual: clutch pedal (down = press) |
 | Q / E / B | Manual: clutch fully down / fully up / near the biting point |
 | F or hold right mouse | Zoom in (e.g. on a mirror) |
-| Space | Handbrake |
+| H | Handbrake |
 | I | Restart the engine |
 | , . | Indicators |
-| Click + mouse | Look around |
+| Drag the mouse | Look around |
+| F1 | Help |
 | C | Driver's seat / top-down / chase view |
 | M | Dip the left mirror |
 | G / P | Guide lines / parking sensors |

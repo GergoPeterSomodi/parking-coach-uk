@@ -77,17 +77,17 @@
   // ---------------------------------------------------------------- generic steps
   function moveOff(gear = '1') {
     const A = P.settings.auto;
-    const gname = gear === 'R' ? 'reverse (R)' : A ? 'Drive (1)' : gear === '1' ? '1st gear (1)' : '2nd gear (2)';
+    const gname = gear === 'R' ? 'reverse (R)' : A ? 'Drive (press ↑)' : gear === '1' ? '1st gear (1)' : '2nd gear (2)';
     return {
       title: 'Move off (POM: prepare, observe, move)',
       text: A
-        ? `Select ${gname}. Look all round: left blind spot, mirrors, right blind spot. Release the handbrake (Space) and let the car creep forward. Tap the brake (S) to keep it slow.`
-        : `Clutch fully down (Q), select ${gname}. Look all round: left blind spot, mirrors, right blind spot. Bring the clutch up to the biting point (B, then scroll up gently until the revs dip), release the handbrake (Space) and creep forward.`,
+        ? `Select ${gname}. Look all round: left blind spot, mirrors, right blind spot. Release the handbrake (H) and let the car creep forward. Tap the brake (Space) to keep it slow.`
+        : `Clutch fully down (Q), select ${gname}. Look all round: left blind spot, mirrors, right blind spot. Bring the clutch up to the biting point (B, then scroll up gently until the revs dip), release the handbrake (H) and creep forward.`,
       look: 'allRound',
       checklist: st => [
         { label: A ? `Select ${gname}` : `Clutch down & ${gname}`, ok: st.gear === gear },
         { label: 'All-round observation', ok: st.obs.allRound() },
-        { label: 'Handbrake off (Space)', ok: !st.hb },
+        { label: 'Handbrake off (H)', ok: !st.hb },
         { label: 'Creeping forward', ok: st.v > 0.15 },
       ],
       done: st => st.gear === gear && !st.hb && st.v > 0.15,
@@ -101,7 +101,7 @@
   function prepReverse(extra = '') {
     return {
       title: 'Prepare to reverse',
-      text: (P.settings.auto ? 'Stop. Select reverse (R).' : 'Stop. Clutch fully down (Q), select reverse (R).') + ' Do full all-round observation: left blind spot, over your left shoulder through the rear window, right blind spot and both mirrors. ' + extra,
+      text: (P.settings.auto ? 'Stop. Select reverse (press ↓ or R).' : 'Stop. Clutch fully down (Q), select reverse (R).') + ' Do full all-round observation: left blind spot, over your left shoulder through the rear window, right blind spot and both mirrors. ' + extra,
       look: 'allRound',
       checklist: st => [
         { label: 'Stopped', ok: st.stopped },
@@ -115,7 +115,7 @@
   function secure(last = true) {
     return {
       title: last ? 'Secure the car' : 'Stop and secure',
-      text: 'Stop. Apply the handbrake (Space) and select neutral (N). Then you can relax your feet.',
+      text: 'Stop. Apply the handbrake (H) and select neutral (N). Then you can relax your feet.',
       look: 'front',
       checklist: st => [
         { label: 'Stopped', ok: st.stopped },
@@ -187,7 +187,7 @@
         prepReverse(),
         {
           title: 'Full right lock',
-          text: (P.settings.auto ? 'Release the handbrake and let the car creep back VERY slowly (tap the brake S to slow it).' : 'Find the biting point and creep back VERY slowly.') + ' As soon as the car moves, turn the wheel quickly to FULL RIGHT LOCK (hold D, about 1½ turns). Keep looking around: through the rear window and both mirrors.',
+          text: (P.settings.auto ? 'Release the handbrake and let the car creep back VERY slowly; tap Space to brake.' : 'Find the biting point and creep back VERY slowly.') + ' As soon as the car moves, turn the wheel quickly to FULL RIGHT LOCK (hold D, about 1½ turns). Keep looking around: through the rear window and both mirrors.',
           look: 'rear',
           meter: st => ({ label: 'steering to full right lock', value: Math.max(0, 1 + st.sf) * 100, max: 100, unit: '%' }),
           warn: st => (st.x < xTurn - 0.5 && st.sf > -0.6) ? 'Turn now! Full right lock (D).' : null,
@@ -580,7 +580,7 @@
         },
         {
           title: 'Secure',
-          text: 'Handbrake on (Space). Cancel your signal (. again).',
+          text: 'Handbrake on (H). Cancel your signal (. again).',
           look: 'front',
           checklist: st => [{ label: 'Handbrake on', ok: st.hb }, { label: 'Signal off', ok: st.ind === 0 }],
           done: st => st.hb && st.ind === 0 && st.stopped,
