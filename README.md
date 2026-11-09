@@ -49,7 +49,7 @@ In the driver's seat, look around with the mouse. The game tracks the blind spot
 |---|---|
 | ↑ / W | Easy: drive forwards (brakes first if reversing). Automatic/Manual: gas |
 | ↓ / S | Easy: reverse (brakes first if moving forwards). Automatic/Manual: brake |
-| Space / Left Shift | Brake |
+| Space / Right Ctrl | Brake |
 | A / D | Steer (the wheel stays where you leave it at parking speeds) |
 | 1 R N | Automatic: Drive / Reverse / Neutral |
 | 1 2 R N | Manual: gears (clutch down first) |

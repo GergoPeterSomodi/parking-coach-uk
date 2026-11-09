@@ -142,7 +142,7 @@
     $('hint').innerHTML = mode === 'demo'
       ? 'Demo: the car drives itself · <b>C</b> change view · <b>Tab</b> menu'
       : ({
-        easy: '<b>↑</b> forward · <b>↓</b> reverse (brakes first if moving forward) · <b>Space</b>/<b>L-Shift</b> brake · <b>←</b>/<b>→</b> steer · <b>H</b> handbrake · drag the mouse to look around · <b>F1</b> help',
+        easy: '<b>↑</b> forward · <b>↓</b> reverse (brakes first if moving forward) · <b>Space</b>/<b>Right Ctrl</b> brake · <b>←</b>/<b>→</b> steer · <b>H</b> handbrake · drag the mouse to look around · <b>F1</b> help',
         auto: 'Start: <b>1</b> Drive / <b>R</b> reverse · <b>H</b> handbrake off · <b>↑</b> gas · <b>↓</b>/<b>Space</b> brake · <b>←</b>/<b>→</b> steer · drag the mouse to look around · <b>F1</b> help',
         manual: 'Start: <b>Q</b> clutch down · <b>1</b> gear · <b>B</b> + scroll up to bite · <b>H</b> handbrake off · <b>↓</b>/<b>Space</b> brake · drag the mouse to look around · <b>F1</b> help',
       }[P.settings.drive]);
@@ -218,8 +218,8 @@
 
   // ---------------------------------------------------------------- input
   // Up/W = go forwards, Down/S = go backwards; the opposite arrow brakes first.
-  // Space or Left Shift = brake.
-  const keyMap = { KeyW: 'gas', ArrowUp: 'gas', KeyS: 'back', ArrowDown: 'back', Space: 'brake', ShiftLeft: 'brake', KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right' };
+  // Space or Right Ctrl = brake.
+  const keyMap = { KeyW: 'gas', ArrowUp: 'gas', KeyS: 'back', ArrowDown: 'back', Space: 'brake', ControlRight: 'brake', KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right' };
   window.addEventListener('keydown', (e) => {
     S.init();
     if (e.code === 'Tab') { e.preventDefault(); toggleMenu(); return; }
@@ -708,7 +708,7 @@
     const gs = $('gear-select');
     gs.innerHTML = '';
     for (const [drive, name, blurb] of [
-      ['easy', 'Easy', 'Game-style: ↑ forward, ↓ reverse (brakes first if needed), Space brake. Gears and handbrake are handled for you.'],
+      ['easy', 'Easy', 'Game-style: ↑ forward, ↓ reverse (brakes first if needed), Space or Right Ctrl brakes. Gears and handbrake are handled for you.'],
       ['auto', 'Automatic', 'Realistic automatic: select Drive (1) / Reverse (R), release the handbrake (H). The car creeps; ↓ or Space brakes.'],
       ['manual', 'Manual', 'Clutch on the mouse wheel, biting point, stalling. Like most UK tests.'],
     ]) {
