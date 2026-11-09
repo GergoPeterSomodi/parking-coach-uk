@@ -5,9 +5,14 @@
 window.PS = window.PS || {};
 
 (function (P) {
-  let savedAuto = null;
-  try { savedAuto = localStorage.getItem('pc.auto'); } catch (e) { /* storage blocked */ }
-  P.settings = { auto: savedAuto !== '0' };   // automatic gearbox by default
+  // drive: 'easy' (game-style arrows), 'auto' (realistic automatic) or 'manual'
+  let saved = null;
+  try { saved = localStorage.getItem('pc.drive'); } catch (e) { /* storage blocked */ }
+  P.settings = {
+    drive: ['easy', 'auto', 'manual'].includes(saved) ? saved : 'easy',
+    get auto() { return this.drive !== 'manual'; },   // automatic gearbox physics
+    get easy() { return this.drive === 'easy'; },     // arrows pick the gear, opposite arrow brakes
+  };
   P.CARS = {
     tcross: {
       id: 'tcross', name: 'VW T-Cross', blurb: 'Small SUV, 4.11 m long',

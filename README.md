@@ -35,7 +35,7 @@ For kerb distance there's a yellow **sticker on the bonnet** where the kerb appe
 
 ### Automatic or manual
 
-Pick the gearbox in the menu. **Automatic** is the default and the easiest: in Drive or Reverse the car creeps slowly on its own and you brake to stop. The mouse wheel zooms.
+Pick the controls in the menu. **Easy** is the default: game-style arrows, where ↑ goes forward, ↓ reverses (braking first if needed), and gears and handbrake are handled for you. **Automatic** is a realistic automatic: you select Drive/Reverse and the handbrake yourself, and the car creeps. In both, the mouse wheel zooms.
 
 With **Manual**, the clutch is on the **mouse wheel** (scroll down = press). There's a biting point, the creep speed depends on clutch position, and the engine stalls if you dump the clutch or brake without it. You have to select gears with the clutch down.
 
@@ -47,9 +47,9 @@ In the driver's seat, look around with the mouse. The game tracks the blind spot
 
 | Key | Action |
 |---|---|
-| ↑ / W | Drive forwards (picks Drive when stopped) |
-| ↓ / S | Reverse (picks reverse when stopped) |
-| Space | Brake |
+| ↑ / W | Easy: drive forwards (brakes first if reversing). Automatic/Manual: gas |
+| ↓ / S | Easy: reverse (brakes first if moving forwards). Automatic/Manual: brake |
+| Space / Left Shift | Brake |
 | A / D | Steer (the wheel stays where you leave it at parking speeds) |
 | 1 R N | Automatic: Drive / Reverse / Neutral |
 | 1 2 R N | Manual: gears (clutch down first) |

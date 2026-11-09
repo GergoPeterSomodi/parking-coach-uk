@@ -141,10 +141,16 @@
     aimMirrors();
     $('hint').innerHTML = mode === 'demo'
       ? 'Demo: the car drives itself · <b>C</b> change view · <b>Tab</b> menu'
-      : (P.settings.auto
-        ? '<b>↑</b> forward · <b>↓</b> reverse · <b>Space</b> brake · <b>←</b>/<b>→</b> steer · <b>H</b> handbrake · drag the mouse to look around · <b>F1</b> help'
-        : 'Start: <b>Q</b> clutch down · <b>1</b> gear · <b>B</b> + scroll up to bite · <b>H</b> handbrake off · <b>Space</b> brake · drag the mouse to look around · <b>F1</b> help');
-    toast(mode === 'demo' ? 'Watch: the camera looks where you should look' : (P.settings.auto ? 'Press ↑ to drive forwards, ↓ to reverse, Space to brake' : 'Clutch down (Q), 1st gear (1), find the bite, release the handbrake (H)'), 4);
+      : ({
+        easy: '<b>↑</b> forward · <b>↓</b> reverse (brakes first if moving forward) · <b>Space</b>/<b>L-Shift</b> brake · <b>←</b>/<b>→</b> steer · <b>H</b> handbrake · drag the mouse to look around · <b>F1</b> help',
+        auto: 'Start: <b>1</b> Drive / <b>R</b> reverse · <b>H</b> handbrake off · <b>↑</b> gas · <b>↓</b>/<b>Space</b> brake · <b>←</b>/<b>→</b> steer · drag the mouse to look around · <b>F1</b> help',
+        manual: 'Start: <b>Q</b> clutch down · <b>1</b> gear · <b>B</b> + scroll up to bite · <b>H</b> handbrake off · <b>↓</b>/<b>Space</b> brake · drag the mouse to look around · <b>F1</b> help',
+      }[P.settings.drive]);
+    toast(mode === 'demo' ? 'Watch: the camera looks where you should look' : {
+      easy: 'Press ↑ to drive forwards, ↓ to reverse, Space to brake',
+      auto: 'Select Drive (1), release the handbrake (H), and the car creeps forward',
+      manual: 'Clutch down (Q), 1st gear (1), find the bite, release the handbrake (H)',
+    }[P.settings.drive], 4);
   }
 
   function clearGroup(g) { while (g.children.length) { const c = g.children.pop(); c.traverse(o => o.geometry && o.geometry.dispose()); } }
@@ -211,8 +217,9 @@
   }
 
   // ---------------------------------------------------------------- input
-  // Up/W = go forwards, Down/S = go backwards (selects reverse), Space = brake
-  const keyMap = { KeyW: 'gas', ArrowUp: 'gas', KeyS: 'back', ArrowDown: 'back', Space: 'brake', KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right' };
+  // Up/W = go forwards, Down/S = go backwards; the opposite arrow brakes first.
+  // Space or Left Shift = brake.
+  const keyMap = { KeyW: 'gas', ArrowUp: 'gas', KeyS: 'back', ArrowDown: 'back', Space: 'brake', ShiftLeft: 'brake', KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right' };
   window.addEventListener('keydown', (e) => {
     S.init();
     if (e.code === 'Tab') { e.preventDefault(); toggleMenu(); return; }
@@ -221,19 +228,19 @@
     if (e.repeat) return;
     const demo = coach.mode === 'demo';
     if (keyMap[e.code] && demo) toast('Demo: the car drives itself. Press Tab and choose Guided or Test to drive.', 3);
-    // forward/back keys pick the gear for you
     const kind = keyMap[e.code];
-    if (!demo && (kind === 'gas' || kind === 'back')) {
+    if (!demo && P.settings.easy && (kind === 'gas' || kind === 'back')) {
+      // Easy: forward/back keys pick the gear for you and release the handbrake
       const want = kind === 'back' ? 'R' : '1';
       const wrong = kind === 'back' ? veh.gear !== 'R' : (veh.gear === 'R' || veh.gear === 'N');
-      if (wrong) {
-        if (Math.abs(veh.v) > 0.3) toast('Stop first (brake: Space), then change direction', 2);
-        else veh.setGear(want);
-      }
-      if (P.settings.auto && veh.handbrake) { veh.handbrake = false; toast('Handbrake released', 1.2); }
+      // still rolling the other way: step() brakes until stopped, then switches gear
+      if (wrong && Math.abs(veh.v) <= 0.05) veh.setGear(want);
+      if (veh.handbrake) { veh.handbrake = false; toast('Handbrake released', 1.2); }
+    } else if (!demo && kind === 'gas') {
+      // Automatic / Manual: explain why the car isn't moving
       const why = [];
-      if (!veh.engineOn && !P.settings.auto) why.push('start the engine (I)');
-      if (!P.settings.auto && veh.gear !== want) why.push('press the clutch down (Q) to change gear');
+      if (!veh.engineOn) why.push('start the engine (I)');
+      if (veh.gear === 'N') why.push(P.settings.auto ? 'select Drive (1) or Reverse (R)' : 'select a gear: clutch down (Q), then 1 or R');
       if (veh.handbrake) why.push('release the handbrake (H)');
       if (why.length) toast('To move: ' + why.join(', then '), 3);
     }
@@ -393,8 +400,20 @@
     else veh.auto = null;
 
     // Up = gas while going forwards, Down = gas while in reverse
-    const gas = (G.keys.gas && veh.gear !== 'R') || (G.keys.back && veh.gear === 'R');
-    const input = demo ? {} : { gas, brake: G.keys.brake, left: G.keys.left, right: G.keys.right };
+    // Easy: Up = gas forwards, Down = gas in reverse. Automatic/Manual: Up = gas, Down = brake.
+    const easy = P.settings.easy;
+    const gas = easy ? ((G.keys.gas && veh.gear !== 'R') || (G.keys.back && veh.gear === 'R')) : G.keys.gas;
+    // Easy: the opposite arrow acts as a brake; once stopped it changes direction
+    let brake = G.keys.brake || (!easy && G.keys.back);
+    if (!demo && easy) {
+      if (G.keys.back && !G.keys.gas && veh.gear !== 'R') {
+        if (veh.v > 0.05) brake = true; else { veh.setGear('R'); veh.handbrake = false; }
+      }
+      if (G.keys.gas && !G.keys.back && (veh.gear === 'R' || veh.gear === 'N')) {
+        if (veh.v < -0.05) brake = true; else { veh.setGear('1'); veh.handbrake = false; }
+      }
+    }
+    const input = demo ? {} : { gas, brake, left: G.keys.left, right: G.keys.right };
     veh.update(dt, input);
     collide(prev);
 
@@ -688,11 +707,15 @@
     }
     const gs = $('gear-select');
     gs.innerHTML = '';
-    for (const [auto, name, blurb] of [[true, 'Automatic', 'Easier: the car creeps by itself, brake to stop. Mouse wheel zooms.'], [false, 'Manual', 'Clutch on the mouse wheel, biting point, stalling. Like most UK tests.']]) {
+    for (const [drive, name, blurb] of [
+      ['easy', 'Easy', 'Game-style: ↑ forward, ↓ reverse (brakes first if needed), Space brake. Gears and handbrake are handled for you.'],
+      ['auto', 'Automatic', 'Realistic automatic: select Drive (1) / Reverse (R), release the handbrake (H). The car creeps; ↓ or Space brakes.'],
+      ['manual', 'Manual', 'Clutch on the mouse wheel, biting point, stalling. Like most UK tests.'],
+    ]) {
       const d = document.createElement('div');
-      d.className = 'card' + (P.settings.auto === auto ? ' sel' : '');
+      d.className = 'card' + (P.settings.drive === drive ? ' sel' : '');
       d.innerHTML = `<b>${name}</b><span>${blurb}</span>`;
-      d.onclick = () => { P.settings.auto = auto; try { localStorage.setItem('pc.auto', auto ? '1' : '0'); } catch (e) { /* ignore */ } renderMenu(); };
+      d.onclick = () => { P.settings.drive = drive; try { localStorage.setItem('pc.drive', drive); } catch (e) { /* ignore */ } renderMenu(); };
       gs.appendChild(d);
     }
     const ll = $('level-list');

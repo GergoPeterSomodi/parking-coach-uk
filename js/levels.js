@@ -77,7 +77,7 @@
   // ---------------------------------------------------------------- generic steps
   function moveOff(gear = '1') {
     const A = P.settings.auto;
-    const gname = gear === 'R' ? 'reverse (R)' : A ? 'Drive (press ↑)' : gear === '1' ? '1st gear (1)' : '2nd gear (2)';
+    const gname = gear === 'R' ? 'reverse (R)' : A ? (P.settings.easy ? 'Drive (press ↑)' : 'Drive (1)') : gear === '1' ? '1st gear (1)' : '2nd gear (2)';
     return {
       title: 'Move off (POM: prepare, observe, move)',
       text: A
@@ -101,7 +101,7 @@
   function prepReverse(extra = '') {
     return {
       title: 'Prepare to reverse',
-      text: (P.settings.auto ? 'Stop. Select reverse (press ↓ or R).' : 'Stop. Clutch fully down (Q), select reverse (R).') + ' Do full all-round observation: left blind spot, over your left shoulder through the rear window, right blind spot and both mirrors. ' + extra,
+      text: (P.settings.auto ? (P.settings.easy ? 'Stop. Select reverse (press ↓).' : 'Stop. Select reverse (R).') : 'Stop. Clutch fully down (Q), select reverse (R).') + ' Do full all-round observation: left blind spot, over your left shoulder through the rear window, right blind spot and both mirrors. ' + extra,
       look: 'allRound',
       checklist: st => [
         { label: 'Stopped', ok: st.stopped },
