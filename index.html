@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Parking Coach UK</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <canvas id="c"></canvas>
+
+  <div id="hud" class="hidden">
+    <div id="topbar">
+      <span id="top-level"></span>
+      <span id="top-mode" class="pill"></span>
+      <span id="top-time">0:00</span>
+      <span id="top-view" class="pill dim"></span>
+    </div>
+
+    <div id="coach">
+      <div id="c-head"><span id="c-stepnum"></span><span id="c-title"></span></div>
+      <div id="c-text"></div>
+      <div id="c-ref"></div>
+      <ul id="c-check"></ul>
+      <div id="c-meter"><div id="c-meter-fill"></div><div id="c-meter-mark"></div><span id="c-meter-label"></span></div>
+      <div id="c-info"></div>
+      <div id="c-warn"></div>
+      <div id="c-look"></div>
+    </div>
+
+    <div id="obs">
+      <span class="chip" data-zone="leftShoulder">◀ L blind spot</span>
+      <span class="chip" data-zone="leftMirror">L mirror</span>
+      <span class="chip" data-zone="interiorMirror">Interior</span>
+      <span class="chip" data-zone="rear">Rear window</span>
+      <span class="chip" data-zone="rightMirror">R mirror</span>
+      <span class="chip" data-zone="rightShoulder">R blind spot ▶</span>
+    </div>
+
+    <div id="lookring"></div>
+
+    <div id="dash">
+      <div class="row">
+        <div><div id="d-speed">0</div><div class="lbl">mph</div></div>
+        <div><div id="d-gear">N</div><div class="lbl">gear</div></div>
+        <div class="col">
+          <div class="bar"><div id="d-rpm-fill"></div></div>
+          <div class="lbl"><span id="d-rpm">800</span> rpm</div>
+        </div>
+      </div>
+      <div class="row small">
+        <span id="d-ind-l" class="ind">◀</span>
+        <span id="d-hb" class="warnlamp">(P) HANDBRAKE</span>
+        <span id="d-engine" class="warnlamp red hidden">ENGINE OFF: press I</span>
+        <span id="d-ind-r" class="ind">▶</span>
+      </div>
+    </div>
+
+    <div id="pedals">
+      <div class="pedal">
+        <div class="vbar"><div id="p-bite"></div><div id="p-clutch-fill"></div></div>
+        <div class="lbl">clutch</div>
+      </div>
+      <div class="pedal"><div class="vbar"><div id="p-brake-fill" class="fill red"></div></div><div class="lbl">brake</div></div>
+      <div class="pedal"><div class="vbar"><div id="p-gas-fill" class="fill green"></div></div><div class="lbl">gas</div></div>
+      <div class="wheelbox">
+        <svg id="sw-icon" viewBox="-50 -50 100 100" width="72" height="72">
+          <circle r="40" fill="none" stroke="currentColor" stroke-width="8"/>
+          <line x1="-40" y1="0" x2="40" y2="0" stroke="currentColor" stroke-width="7"/>
+          <line x1="0" y1="0" x2="0" y2="40" stroke="currentColor" stroke-width="7"/>
+          <rect x="-5" y="-48" width="10" height="12" fill="#ff7a00"/>
+        </svg>
+        <div id="sw-text">straight</div>
+      </div>
+      <div id="p-clutch-label" class="cl-label"></div>
+    </div>
+
+    <div id="sensors"><div id="s-front" class="sens"></div><div id="s-rear" class="sens"></div></div>
+    <ul id="faults"></ul>
+    <div id="toast"></div>
+    <div id="hint">Click the view to look around with the mouse · <b>H</b> help · <b>Tab</b> menu</div>
+  </div>
+
+  <div id="menu" class="overlay">
+    <div class="panel wide">
+      <h1>Parking Coach <span class="uk">UK</span></h1>
+      <p class="sub">Learn the DVSA test manoeuvres in a right-hand-drive manual car: what to look for, when to turn, when to stop.</p>
+      <h3>1. Your car</h3>
+      <div id="car-select" class="cards"></div>
+      <h3>2. Manoeuvre &amp; mode</h3>
+      <p class="modes-help"><b>Demo</b>: the car drives itself and the camera looks where you should look. <b>Guided</b>: you drive, with step-by-step prompts, reference points and a ghost car. <b>Test</b>: no prompts; you are scored like on the test, then shown when you turned compared with the ideal.</p>
+      <div id="level-list"></div>
+      <div class="foot">
+        <button id="btn-help" class="ghost">Controls &amp; how to drive</button>
+        <button id="btn-resume" class="ghost hidden">Resume ▶</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="help" class="overlay hidden">
+    <div class="panel wide">
+      <h2>Controls</h2>
+      <div class="cols">
+        <table>
+          <tr><th colspan="2">Driving (manual)</th></tr>
+          <tr><td><kbd>Mouse wheel</kbd></td><td>Clutch pedal: scroll <b>down</b> = press, <b>up</b> = release</td></tr>
+          <tr><td><kbd>Q</kbd> / <kbd>E</kbd></td><td>Clutch fully down / fully up</td></tr>
+          <tr><td><kbd>B</kbd></td><td>Clutch to just below the biting point</td></tr>
+          <tr><td><kbd>W</kbd> <kbd>↑</kbd></td><td>Gas</td></tr>
+          <tr><td><kbd>S</kbd> <kbd>↓</kbd></td><td>Brake</td></tr>
+          <tr><td><kbd>A</kbd> <kbd>D</kbd> / <kbd>←</kbd> <kbd>→</kbd></td><td>Steer (the wheel stays where you leave it)</td></tr>
+          <tr><td><kbd>1</kbd> <kbd>2</kbd> <kbd>R</kbd> <kbd>N</kbd></td><td>1st, 2nd, Reverse, Neutral (clutch down first!)</td></tr>
+          <tr><td><kbd>Space</kbd></td><td>Handbrake on/off</td></tr>
+          <tr><td><kbd>I</kbd></td><td>Restart the engine after a stall</td></tr>
+          <tr><td><kbd>,</kbd> <kbd>.</kbd></td><td>Indicate left / right</td></tr>
+        </table>
+        <table>
+          <tr><th colspan="2">Looking &amp; tools</th></tr>
+          <tr><td><kbd>Click</kbd> + <kbd>Mouse</kbd></td><td>Look around (driver's seat). Turn your head to check blind spots and mirrors</td></tr>
+          <tr><td><kbd>Z</kbd></td><td>Look straight ahead again</td></tr>
+          <tr><td><kbd>C</kbd></td><td>Change view: driver's seat → top-down → behind car</td></tr>
+          <tr><td><kbd>-</kbd> <kbd>=</kbd></td><td>Zoom the top-down view</td></tr>
+          <tr><td><kbd>M</kbd></td><td>Dip the left door mirror (to see the kerb)</td></tr>
+          <tr><td><kbd>G</kbd></td><td>Guide lines showing where the car will go</td></tr>
+          <tr><td><kbd>P</kbd></td><td>Parking sensors on/off</td></tr>
+          <tr><td><kbd>Backspace</kbd></td><td>Restart this attempt</td></tr>
+          <tr><td><kbd>Enter</kbd></td><td>Finish the attempt now &amp; see the debrief</td></tr>
+          <tr><td><kbd>K</kbd></td><td>Skip a guided step</td></tr>
+          <tr><td><kbd>Tab</kbd></td><td>Menu</td></tr>
+        </table>
+      </div>
+      <h3>Clutch control (the key to slow manoeuvres)</h3>
+      <ol class="tips">
+        <li>Clutch fully down (<kbd>Q</kbd>), select the gear.</li>
+        <li>Press <kbd>B</kbd> to bring the clutch near the biting point, then scroll <b>up</b> one notch at a time until the revs dip and the clutch bar turns orange (biting).</li>
+        <li>Release the handbrake. The car creeps: scroll up a notch to go a little faster, down a notch to slow. Brake (<kbd>S</kbd>) with the clutch down to stop.</li>
+        <li>Lift the clutch too fast and you'll stall, just like the real car. Brake without the clutch down and you'll stall too.</li>
+      </ol>
+      <h3>Observations are scored</h3>
+      <p>Like the examiner, the game checks you look all round before moving and keep looking behind while reversing. Use the mouse in the driver's seat: left blind spot, over your left shoulder through the rear window, right blind spot, and the mirrors. The chips at the top light up when you've checked them.</p>
+      <div class="foot"><button id="btn-help-close">Back</button></div>
+    </div>
+  </div>
+
+  <div id="debrief" class="overlay hidden">
+    <div class="panel wide">
+      <div id="db-content"></div>
+      <div class="foot">
+        <button id="db-retry">Try again</button>
+        <button id="db-next" class="ghost"></button>
+        <button id="db-menu" class="ghost">Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/carModel.js"></script>
+  <script src="js/vehicle.js"></script>
+  <script src="js/world.js"></script>
+  <script src="js/levels.js"></script>
+  <script src="js/coach.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
