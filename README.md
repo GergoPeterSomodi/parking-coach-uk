@@ -39,6 +39,10 @@ Pick the controls in the menu. **Easy** is the default: game-style arrows, where
 
 With **Manual**, the clutch is on the **mouse wheel** (scroll down = press). There's a biting point, the creep speed depends on clutch position, and the engine stalls if you dump the clutch or brake without it. You have to select gears with the clutch down.
 
+### Drive with your phone
+
+Click 📱 (top bar or menu) and scan the QR code with the phone. Hold the phone sideways like a steering wheel and turn it to steer; GAS is under the right thumb, BRAKE and REVERSE under the left. The phone vibrates when you bump something. The phone and computer link up through PeerJS (WebRTC) and then talk directly, over Wi-Fi when they share a network. The controller page has to be served over https (phones only allow tilt sensors on secure pages), so it uses the GitHub Pages copy.
+
 ### Observation is scored
 
 In the driver's seat, look around with the mouse. The game tracks the blind spots, rear window and mirrors. It records a fault if you move off or reverse without all-round checks, or reverse without looking behind.
@@ -82,6 +86,8 @@ js/levels.js      the manoeuvres: coaching steps, reference points, scoring
 js/coach.js       observation tracking, guided/demo step runner, faults
 js/audio.js       engine, parking sensors, bumps
 js/voice.js       voice coach (browser speech)
+js/phone.js       game side of the phone wheel (pairing, steering, buttons)
+js/controller.js  the phone page (controller.html): tilt steering + pedals
 js/main.js        renderer, cameras, input, HUD, debrief
 ```
 

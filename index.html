@@ -15,6 +15,7 @@
       <span id="top-mode" class="pill"></span>
       <span id="top-time">0:00</span>
       <span id="top-view" class="pill dim"></span>
+      <button id="phone-btn" class="mute" title="Drive with your phone">📱</button>
       <button id="mute-btn" class="mute" title="Sound on/off (V)">🔊</button>
     </div>
 
@@ -97,6 +98,7 @@
       <p class="modes-help"><b>Demo</b>: the car drives itself and the camera looks where you should look. <b>Guided</b>: you drive, with step-by-step prompts, reference points and a ghost car. <b>Test</b>: no prompts; you are scored like on the test, then shown when you turned compared with the ideal.</p>
       <div id="level-list"></div>
       <div class="foot">
+        <button id="menu-phone-btn" class="ghost">📱 Drive with your phone</button>
         <button id="menu-mute-btn" class="ghost">🔊 Sound on</button>
         <button id="btn-help" class="ghost">Controls &amp; how to drive</button>
         <button id="btn-resume" class="ghost hidden">Resume ▶</button>
@@ -155,6 +157,27 @@
     </div>
   </div>
 
+  <div id="phone" class="overlay hidden">
+    <div class="panel">
+      <h2>📱 Drive with your phone</h2>
+      <div class="phone-cols">
+        <div id="qr"></div>
+        <div>
+          <ol class="tips">
+            <li>Scan the QR code with the phone's camera (or open the link below on the phone).</li>
+            <li>Tap <b>Connect &amp; start</b>.</li>
+            <li>Hold the phone <b>sideways in both hands like a steering wheel</b> and turn it to steer. <b>GAS</b> is under your right thumb; <b>BRAKE</b> and <b>REVERSE</b> are under your left.</li>
+          </ol>
+          <p>Code: <span id="phone-code" class="phone-code">…</span></p>
+          <p class="sub" style="word-break:break-all"><span id="phone-url"></span></p>
+          <p id="phone-status" class="phone-status">Starting…</p>
+          <p class="sub">The phone and the computer link up over the internet, then talk directly over your Wi-Fi. No cable or Bluetooth needed. Keep this game open while you drive.</p>
+        </div>
+      </div>
+      <div class="foot"><button id="phone-close">Done</button></div>
+    </div>
+  </div>
+
   <div id="debrief" class="overlay hidden">
     <div class="panel wide">
       <div id="db-content"></div>
@@ -167,9 +190,12 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="js/config.js"></script>
   <script src="js/audio.js"></script>
   <script src="js/voice.js"></script>
+  <script src="js/phone.js"></script>
   <script src="js/carModel.js"></script>
   <script src="js/vehicle.js"></script>
   <script src="js/world.js"></script>

@@ -59,9 +59,14 @@
       this.brake = P.approach(this.brake, input.brake ? 1 : 0, dt * 6);
       // steering (stays where you leave it at low speed; self-centres a little when going faster)
       const rate = s.maxSteer / 1.0;
-      if (input.left) this.steer += rate * dt;
-      if (input.right) this.steer -= rate * dt;
-      if (!input.left && !input.right && Math.abs(this.v) > 2) {
+      if (input.steerTarget != null) {
+        // phone wheel: the wheels follow the phone's angle (a little faster than the keys)
+        this.steer = P.approach(this.steer, input.steerTarget, rate * 1.6 * dt);
+      } else {
+        if (input.left) this.steer += rate * dt;
+        if (input.right) this.steer -= rate * dt;
+      }
+      if (input.steerTarget == null && !input.left && !input.right && Math.abs(this.v) > 2) {
         this.steer = P.approach(this.steer, 0, 0.25 * (Math.abs(this.v) - 2) * dt);
       }
       this.steer = P.clamp(this.steer, -s.maxSteer, s.maxSteer);

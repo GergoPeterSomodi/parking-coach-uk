@@ -356,10 +356,10 @@
         G.lastContact = G.time;
         if (fresh) G.lastCrashSound = G.time;
         if (o.kind === 'kerb') {
-          if (fresh) S.kerb();
+          if (fresh) { S.kerb(); P.phone.send({ vibrate: 120 }); }
           if (newContact && coach.fault('kerb', 'minor', 'Touched the kerb')) toast('Kerb!', 0.8);
         } else {
-          if (fresh) S.bump();
+          if (fresh) { S.bump(); P.phone.send({ vibrate: [250, 80, 250] }); }
           if (newContact && coach.fault('hit-' + o.kind, 'serious', o.kind === 'car' ? 'Hit a parked car' : 'Hit an obstacle')) toast('Bump!', 0.8);
         }
         return impact;
@@ -432,6 +432,8 @@
       }
     }
     const input = demo ? {} : { gas, brake, left: G.keys.left, right: G.keys.right };
+    // phone wheel: tilt sets the wheel position (phone + = right, car + = left). Keys still work if the phone is idle.
+    if (!demo && P.phone.steering && !G.keys.left && !G.keys.right) input.steerTarget = -P.phone.steer * spec.maxSteer;
     veh.update(dt, input);
     collide(prev);
 
@@ -500,6 +502,8 @@
     S.engine(veh.rpm, veh.engineOn, veh.throttle);
     updateCarVisual(dt);
     updateGuideLines();
+    G.phoneT = (G.phoneT || 0) + dt;
+    if (G.phoneT > 0.25 && P.phone.connected) { G.phoneT = 0; P.phone.send({ hud: hudForPhone() }); }
     G.hudT += dt;
     if (G.hudT > 0.066) { updateHud(st, ap); G.hudT = 0; }
     if (G.toastT > 0) { G.toastT -= dt; if (G.toastT <= 0) $('toast').classList.remove('show'); }
@@ -722,7 +726,7 @@
   }
 
   // ---------------------------------------------------------------- menus & debrief
-  function hideOverlays() { ['menu', 'help', 'debrief'].forEach(id => $(id).classList.add('hidden')); }
+  function hideOverlays() { ['menu', 'help', 'debrief', 'phone'].forEach(id => $(id).classList.add('hidden')); }
   function toggleMenu() {
     if (!$('menu').classList.contains('hidden')) { if (ctx && !coach.finished) { hideOverlays(); G.running = true; } return; }
     G.running = false; G.keys = {};
@@ -755,6 +759,45 @@
     $(id).onclick = (e) => { toggleMute(); e.currentTarget.blur(); };   // blur so Space doesn't press it again
   }
   refreshMute();
+
+  // phone wheel
+  let qrShownFor = null;
+  function refreshPhone() {
+    const ph = P.phone;
+    $('phone-btn').classList.toggle('on', ph.connected);
+    $('menu-phone-btn').textContent = ph.connected ? '📱 Phone connected' : '📱 Drive with your phone';
+    $('phone-code').textContent = ph.code || '…';
+    const st = $('phone-status');
+    st.className = 'phone-status' + (ph.state === 'connected' ? ' ok' : ph.state === 'error' ? ' bad' : '');
+    st.textContent = { off: '', starting: 'Starting…', waiting: 'Waiting for the phone…', connected: '● Phone connected. Tilt to steer!', error: ph.msg }[ph.state] || '';
+    if (ph.code && (ph.state === 'waiting' || ph.state === 'connected') && qrShownFor !== ph.code && window.QRCode) {
+      qrShownFor = ph.code;
+      const url = ph.controllerUrl();
+      $('qr').innerHTML = '';
+      new QRCode($('qr'), { text: url, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
+      $('phone-url').textContent = url;
+    }
+    if (ph.state === 'connected' && !$('phone').classList.contains('hidden')) {
+      toast('Phone connected', 1.5);
+      ph.send({ hud: hudForPhone() });
+    }
+  }
+  P.phone.onChange = refreshPhone;
+  function showPhone() {
+    G.phoneResume = G.running;
+    G.running = false; G.keys = {};
+    if (document.pointerLockElement) document.exitPointerLock();
+    P.phone.start();
+    refreshPhone();
+    $('phone').classList.remove('hidden');
+  }
+  $('phone-btn').onclick = (e) => { e.currentTarget.blur(); showPhone(); };
+  $('menu-phone-btn').onclick = (e) => { e.currentTarget.blur(); showPhone(); };
+  $('phone-close').onclick = () => { $('phone').classList.add('hidden'); if (G.phoneResume) G.running = true; };
+  function hudForPhone() {
+    return { gear: veh ? veh.gear : 'N', mph: veh ? (Math.abs(veh.v) * 2.237).toFixed(1) : '0.0', hb: veh ? veh.handbrake : true, mode: P.settings.drive };
+  }
+
   $('btn-help').onclick = showHelp;
   $('btn-help-close').onclick = () => {
     hideOverlays();

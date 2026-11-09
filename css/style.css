@@ -22,6 +22,15 @@ kbd { display: inline-block; padding: 1px 6px; border-radius: 4px; background: #
 .pill.dim { background: #2a323d; color: var(--dim); }
 .mute { pointer-events: auto; padding: 2px 8px; font-size: 15px; line-height: 1.2; background: #2a323d; color: #fff; border-radius: 8px; }
 .mute.off { background: #5a2020; }
+#phone-btn.on { background: #13361f; box-shadow: 0 0 0 2px var(--accent); }
+.phone-cols { display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: start; }
+@media (max-width: 600px) { .phone-cols { grid-template-columns: 1fr; } }
+#qr { background: #fff; padding: 10px; border-radius: 10px; width: 240px; height: 240px; }
+#qr img, #qr canvas { width: 220px !important; height: 220px !important; }
+.phone-code { font: 800 26px/1 ui-monospace, Consolas, monospace; letter-spacing: 5px; color: var(--yellow); }
+.phone-status { font-weight: 700; }
+.phone-status.ok { color: var(--accent); }
+.phone-status.bad { color: var(--bad); }
 #top-time { font-variant-numeric: tabular-nums; color: var(--dim); }
 
 #coach { position: absolute; top: 10px; left: 12px; width: min(420px, calc(100vw - 24px)); background: var(--bg); border-radius: 12px; padding: 12px 14px; border-left: 4px solid var(--accent); }

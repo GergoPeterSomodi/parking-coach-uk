@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#10151c">
+  <title>Parking Coach Wheel</title>
+  <style>
+    :root { --bg: #10151c; --fg: #eef2f6; --dim: #9aa6b2; --green: #35e07a; --red: #ff5a5a; --amber: #ffb020; --panel: #18202a; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; overflow: hidden; touch-action: none; }
+    .hidden { display: none !important; }
+    /* start screen */
+    #start { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 20px; text-align: center; }
+    #start h1 { margin: 0; font-size: 24px; }
+    #start p { margin: 0; color: var(--dim); max-width: 420px; }
+    #code { font: 700 28px/1 ui-monospace, monospace; letter-spacing: 6px; text-align: center; width: 220px; padding: 10px; border-radius: 10px; border: 2px solid #2a3442; background: var(--panel); color: #fff; text-transform: uppercase; }
+    button { font: inherit; font-weight: 800; border: 0; border-radius: 14px; cursor: pointer; color: #062; background: var(--green); }
+    #go { padding: 14px 30px; font-size: 18px; }
+    #err { color: var(--red); min-height: 1.4em; }
+    /* driving screen */
+    #drive { position: fixed; inset: 0; display: grid; grid-template-columns: 1fr 1.1fr 1fr; gap: 10px; padding: 10px; }
+    .col { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+    .pad { flex: 1; display: flex; align-items: center; justify-content: center; border-radius: 22px; font-size: 26px; letter-spacing: 1px; border: 3px solid transparent; transition: transform 0.05s, filter 0.05s; touch-action: none; }
+    .pad small { display: block; font-size: 13px; font-weight: 600; opacity: 0.8; letter-spacing: 0; }
+    .pad.on { transform: scale(0.97); filter: brightness(1.35); border-color: #fff; }
+    #brake { background: #6b1e1e; color: #ffd6d6; flex: 1.4; }
+    #reverse { background: #6b4a10; color: #ffe7b8; }
+    #gas { background: #145a32; color: #c9ffe0; }
+    #mid { display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 6px; min-height: 0; }
+    #wheel { width: min(42vh, 30vw); height: min(42vh, 30vw); transition: transform 0.03s linear; }
+    #status { font-size: 13px; color: var(--dim); text-align: center; }
+    #status b { color: var(--green); }
+    #hud { font: 800 22px/1 ui-monospace, monospace; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+    .small { padding: 9px 12px; font-size: 13px; background: #263040; color: #fff; border-radius: 10px; }
+    .small.on { background: var(--amber); color: #331d00; }
+    #steerpads { display: flex; gap: 8px; width: 100%; }
+    #steerpads .pad { font-size: 30px; background: #263040; min-height: 70px; }
+    #rotate { position: fixed; inset: 0; background: var(--bg); display: none; align-items: center; justify-content: center; text-align: center; padding: 20px; font-size: 20px; }
+    @media (orientation: portrait) { body.driving #rotate { display: flex; } }
+  </style>
+</head>
+<body>
+  <div id="start">
+    <h1>🚗 Parking Coach: phone wheel</h1>
+    <p>Enter the code shown in the game (or scan its QR code). Then hold the phone sideways in both hands like a steering wheel.</p>
+    <input id="code" maxlength="6" autocomplete="off" autocapitalize="characters" placeholder="CODE">
+    <button id="go">Connect &amp; start</button>
+    <div id="err"></div>
+    <p style="font-size:13px">Tip: the phone and computer don't need a cable. They link over the internet or your Wi-Fi.</p>
+  </div>
+
+  <div id="drive" class="hidden">
+    <div class="col">
+      <div class="pad" id="brake" data-code="Space">BRAKE</div>
+      <div class="pad" id="reverse" data-code="ArrowDown">REVERSE<small>hold</small></div>
+    </div>
+    <div id="mid">
+      <div id="status">Connecting…</div>
+      <svg id="wheel" viewBox="-50 -50 100 100">
+        <circle r="42" fill="none" stroke="#dfe6ee" stroke-width="8"/>
+        <line x1="-42" y1="0" x2="42" y2="0" stroke="#dfe6ee" stroke-width="7"/>
+        <line x1="0" y1="0" x2="0" y2="42" stroke="#dfe6ee" stroke-width="7"/>
+        <circle r="9" fill="#dfe6ee"/>
+        <rect x="-5" y="-50" width="10" height="13" fill="#ff7a00"/>
+      </svg>
+      <div id="hud">N · 0.0 mph</div>
+      <div id="note" style="font-size:12px;color:#ffb020"></div>
+      <div id="steerpads" class="hidden">
+        <div class="pad" data-code="ArrowLeft">◀</div>
+        <div class="pad" data-code="ArrowRight">▶</div>
+      </div>
+      <div class="row">
+        <button class="small" id="centre">Centre wheel</button>
+        <button class="small" id="hb" data-tap="KeyH">Handbrake</button>
+        <button class="small" data-tap="KeyC">View</button>
+        <button class="small" data-tap="KeyZ">Look ahead</button>
+      </div>
+    </div>
+    <div class="col">
+      <div class="pad" id="gas" data-code="ArrowUp">GAS<small>forward</small></div>
+    </div>
+  </div>
+  <div id="rotate">↻ Turn the phone sideways<br>and hold it like a steering wheel</div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
+  <script src="js/controller.js"></script>
+</body>
+</html>
