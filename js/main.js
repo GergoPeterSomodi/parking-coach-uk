@@ -11,6 +11,7 @@
     levelIdx: 0, mode: 'guided', view: 'driver', running: false,
     yaw: 0, pitch: -0.08, topRot: 0, topH: 22, chaseYaw: 0, chasePitch: 0.38,
     keys: {}, ind: 0, dip: false, guides: true, sensors: true, zoom: 0, zoomHold: false, zoomNow: 0,
+    minimap: localStorage.getItem('pc.minimap') !== '0',
     stillTime: 0, armed: true, sensorT: 0, toastT: 0, hudT: 0, indT: 0, indOn: false,
   };
   window.PSGame = G; // for debugging
@@ -44,6 +45,7 @@
   driverCam.rotation.order = 'YXZ';
   const topCam = new THREE.PerspectiveCamera(50, 1, 0.5, 500);
   const chaseCam = new THREE.PerspectiveCamera(60, 1, 0.1, 500);
+  const miniCam = new THREE.PerspectiveCamera(50, 1, 0.5, 200);   // top-down picture-in-picture box
 
   // mirror render targets
   const RT = {
@@ -248,6 +250,7 @@
     switch (e.code) {
       case 'KeyC': G.view = VIEWS[(VIEWS.indexOf(G.view) + 1) % VIEWS.length]; toast(VIEW_NAMES[G.view], 1); break;
       case 'KeyZ': G.yaw = 0; G.pitch = -0.08; G.chaseYaw = 0; break;
+      case 'KeyT': G.minimap = !G.minimap; try { localStorage.setItem('pc.minimap', G.minimap ? '1' : '0'); } catch (err) { /* ignore */ } toast('Top-view box ' + (G.minimap ? 'on' : 'off'), 1); break;
       case 'KeyM': G.dip = !G.dip; aimMirrors(); toast(G.dip ? 'Left mirror dipped (kerb view)' : 'Left mirror normal', 1.2); break;
       case 'KeyG': G.guides = !G.guides; toast('Guide lines ' + (G.guides ? 'on' : 'off'), 1); break;
       case 'KeyP': G.sensors = !G.sensors; toast('Parking sensors ' + (G.sensors ? 'on' : 'off'), 1); break;
@@ -550,6 +553,27 @@
       guideLines.group.visible = G.guides && veh.gear !== 'N';
     }
     renderer.render(scene, cam);
+
+    // top-down box in the corner (car always points up)
+    const box = $('minimap');
+    const showMini = G.minimap && G.running && G.view !== 'top';
+    box.classList.toggle('hidden', !showMini);
+    document.body.classList.toggle('with-minimap', showMini);
+    if (showMini) {
+      const r = box.getBoundingClientRect();
+      const W = window.innerWidth, H = window.innerHeight;
+      const x = r.left, y = H - r.bottom, w = r.width, h = r.height;
+      miniCam.aspect = w / h; miniCam.updateProjectionMatrix();
+      miniCam.position.set(veh.cx, 17, veh.cz);
+      miniCam.up.set(Math.sin(veh.th), 0, Math.cos(veh.th));
+      miniCam.lookAt(veh.cx, 0, veh.cz);
+      renderer.setScissorTest(true);
+      renderer.setScissor(x, y, w, h);
+      renderer.setViewport(x, y, w, h);
+      renderer.render(scene, miniCam);
+      renderer.setScissorTest(false);
+      renderer.setViewport(0, 0, W, H);
+    }
   }
 
   // ---------------------------------------------------------------- HUD

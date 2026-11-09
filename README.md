@@ -62,6 +62,7 @@ In the driver's seat, look around with the mouse. The game tracks the blind spot
 | Drag the mouse | Look around |
 | F1 | Help |
 | C | Driver's seat / top-down / chase view |
+| T | Show/hide the small top-view box while driving |
 | M | Dip the left mirror |
 | G / P | Guide lines / parking sensors |
 | Backspace / Enter / Tab | Restart / finish attempt / menu |
