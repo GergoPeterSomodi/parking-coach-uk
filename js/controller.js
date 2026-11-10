@@ -49,30 +49,67 @@
   // ---------------------------------------------------------------- connection
   function setStatus(html) { $('status').innerHTML = html; }
 
+  // Two routes to the game, tried at the same time:
+  //  1. direct link (WebRTC via PeerJS): fastest, but some networks block it
+  //  2. relay (a public MQTT message server): works on any network with internet, a little slower
+  // Messages go over the direct link when it's open, otherwise over the relay. Never both.
+  const RELAY_BROKERS = ['wss://broker.hivemq.com:8884/mqtt', 'wss://broker.emqx.io:8084/mqtt'];
+  let relay = null, relayOk = false, lastFromGame = 0, lastVia = '';
+  const directOpen = () => !!(conn && conn.open);
+
   function connect() {
-    if (!window.Peer) { setStatus('Could not load the connection library. Check the internet connection and reload.'); return; }
-    setStatus('Connecting…');
+    setStatus('Step 1 of 3: reaching the connection service…');
+    startRelay();
+    if (!window.Peer) return;
     if (!peer || peer.destroyed) {
       peer = new Peer();
-      peer.on('open', openConn);
+      peer.on('open', () => { if (!directOpen()) setStatus(`Step 2 of 3: looking for the game (code ${code})…`); openConn(); });
       peer.on('error', (e) => {
-        if (e.type === 'peer-unavailable') setStatus(`Game with code <b style="color:#ff5a5a">${code}</b> not found. Is the phone screen open in the game? <button class="small" onclick="location.reload()">Retry</button>`);
-        else setStatus('Connection problem (' + e.type + '). Retrying…');
-        setTimeout(() => { if (!conn || !conn.open) openConn(); }, 3000);
+        if (e.type === 'peer-unavailable' && !connectedAtAll()) setStatus(`Game with code <b style="color:#ff5a5a">${code}</b> not found. Is the 📱 screen open in the game? Retrying…`);
+        setTimeout(() => { if (!directOpen()) openConn(); }, 3000);
       });
       peer.on('disconnected', () => { try { peer.reconnect(); } catch (e) { /* ignore */ } });
     } else openConn();
+    // if the direct link hasn't opened after a few seconds, say we're using the relay
+    setTimeout(() => { if (!directOpen() && !connectedAtAll()) setStatus('Direct link is slow or blocked on this network: trying the relay…'); }, 7000);
   }
   function openConn() {
-    if (conn && conn.open) return;
+    if (directOpen() || !peer || !peer.open) return;
     conn = peer.connect(ID_PREFIX + code, { reliable: true });
-    conn.on('open', () => { setStatus('<b>● Connected</b>: drive!'); send({ hello: 1 }); });
-    conn.on('data', onGameData);
-    conn.on('close', () => { setStatus('Disconnected. Reconnecting…'); setTimeout(openConn, 1500); });
+    if (!connectedAtAll()) setStatus('Step 3 of 3: linking to the game…');
+    conn.on('open', () => { send({ hello: 1 }); });
+    conn.on('data', (d) => onGameData(d, 'direct'));
+    conn.on('close', () => setTimeout(openConn, 1500));
   }
-  function send(m) { if (conn && conn.open) conn.send(m); }
 
-  function onGameData(d) {
+  function startRelay(i = 0) {
+    if (!window.mqtt || relay) return;
+    const base = 'parkingcoachuk/v1/' + code;
+    relay = mqtt.connect(RELAY_BROKERS[i % RELAY_BROKERS.length], { clientId: 'pcuk-phone-' + Math.random().toString(36).slice(2, 10), clean: true, connectTimeout: 6000, reconnectPeriod: 3000 });
+    relay.on('connect', () => { relayOk = true; relay.subscribe(base + '/p'); relay.publish(base + '/g', JSON.stringify({ hello: 1 })); });
+    relay.on('message', (t, buf) => { try { onGameData(JSON.parse(buf.toString()), 'relay'); } catch (e) { /* ignore */ } });
+    relay.on('close', () => { relayOk = false; });
+    relay.on('error', () => { relayOk = false; try { relay.end(true); } catch (e) { /* ignore */ } relay = null; setTimeout(() => startRelay(i + 1), 2000); });
+  }
+
+  function send(m) {
+    if (directOpen()) { conn.send(m); return; }
+    if (relay && relayOk) relay.publish('parkingcoachuk/v1/' + code + '/g', JSON.stringify(m));
+  }
+  const connectedAtAll = () => performance.now() - lastFromGame < 3000;
+  // for troubleshooting from the browser console
+  window.pcDebug = () => ({ code, direct: directOpen(), relayHost: relay && relay.options && relay.options.hostname, relayOk, relayConnected: relay && relay.connected, sinceGame: Math.round(performance.now() - lastFromGame), lastVia });
+  // keep-alive so the game knows we're here even when not steering
+  // (the game answers every ping, even while it's paused on a menu)
+  setInterval(() => { send({ ping: 1 }); }, 1000);
+  setInterval(() => {
+    if (!document.body.classList.contains('driving')) return;
+    if (connectedAtAll()) setStatus(lastVia === 'direct' ? '<b>● Connected</b> (direct link): drive!' : '<b>● Connected</b> (via relay): drive!');
+    else if (lastFromGame) setStatus('Lost contact with the game… reconnecting');
+  }, 1000);
+
+  function onGameData(d, via) {
+    lastFromGame = performance.now(); lastVia = via;
     if (d.vibrate && navigator.vibrate) navigator.vibrate(d.vibrate);
     if (d.hud) {
       gear = d.hud.gear; mode = d.hud.mode || mode;
@@ -105,7 +142,15 @@
   $('centre').onclick = () => { if (lastUp) neutral = lastUp; steerDeg = 0; steer = 0; navigator.vibrate && navigator.vibrate(30); };
 
   // send the wheel position ~30 times a second
-  setInterval(() => { if (gotMotion) send({ s: +steer.toFixed(3) }); }, 33);
+  // (a bit less often over the relay, which is a shared public server)
+  let lastSent = null, sendTick = 0;
+  setInterval(() => {
+    if (!gotMotion) return;
+    sendTick++;
+    const v = +steer.toFixed(3);
+    if (!directOpen() && (sendTick % 2 || v === lastSent) && sendTick % 15) return;
+    lastSent = v; send({ s: v });
+  }, 33);
 
   // ---------------------------------------------------------------- buttons
   // hold buttons (gas, brake, reverse, steer pads) send key down/up; small buttons send a single tap
@@ -114,7 +159,7 @@
     const down = (e) => {
       e.preventDefault();
       if (el.id === 'reverse' && mode !== 'easy') { send({ tap: gear === 'R' ? 'Digit1' : 'KeyR' }); el.classList.add('on'); navigator.vibrate && navigator.vibrate(15); return; }
-      el.setPointerCapture && el.setPointerCapture(e.pointerId);
+      try { el.setPointerCapture(e.pointerId); } catch (err) { /* finger already lifted */ }
       el.classList.add('on'); send({ down: code }); navigator.vibrate && navigator.vibrate(10);
     };
     const up = (e) => {

@@ -41,7 +41,7 @@ With **Manual**, the clutch is on the **mouse wheel** (scroll down = press). The
 
 ### Drive with your phone
 
-Click 📱 (top bar or menu) and scan the QR code with the phone. Hold the phone sideways like a steering wheel and turn it to steer; GAS is under the right thumb, BRAKE and REVERSE under the left. The phone vibrates when you bump something. The phone and computer link up through PeerJS (WebRTC) and then talk directly, over Wi-Fi when they share a network. The controller page has to be served over https (phones only allow tilt sensors on secure pages), so it uses the GitHub Pages copy.
+Click 📱 (top bar or menu) and scan the QR code with the phone. Hold the phone sideways like a steering wheel and turn it to steer; GAS is under the right thumb, BRAKE and REVERSE under the left. The phone vibrates when you bump something. The phone and computer try a direct link first (PeerJS / WebRTC, over Wi-Fi when they share a network). If the network blocks that, they automatically fall back to a public relay (MQTT over secure WebSockets, HiveMQ or EMQX public brokers), which works on any network with internet. The phone screen shows which route is in use. The controller page has to be served over https (phones only allow tilt sensors on secure pages), so it uses the GitHub Pages copy.
 
 ### Observation is scored
 

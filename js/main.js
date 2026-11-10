@@ -769,7 +769,7 @@
     $('phone-code').textContent = ph.code || '…';
     const st = $('phone-status');
     st.className = 'phone-status' + (ph.state === 'connected' ? ' ok' : ph.state === 'error' ? ' bad' : '');
-    st.textContent = { off: '', starting: 'Starting…', waiting: 'Waiting for the phone…', connected: '● Phone connected. Tilt to steer!', error: ph.msg }[ph.state] || '';
+    st.textContent = { off: '', starting: 'Starting…', waiting: 'Waiting for the phone…', connected: `● Phone connected (${ph.route || 'linking'}). Tilt to steer!`, error: ph.msg }[ph.state] || '';
     if (ph.code && (ph.state === 'waiting' || ph.state === 'connected') && qrShownFor !== ph.code && window.QRCode) {
       qrShownFor = ph.code;
       const url = ph.controllerUrl();
@@ -783,6 +783,7 @@
     }
   }
   P.phone.onChange = refreshPhone;
+  P.phone.hudFn = () => hudForPhone();
   function showPhone() {
     G.phoneResume = G.running;
     G.running = false; G.keys = {};
